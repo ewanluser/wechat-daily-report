@@ -4,7 +4,7 @@ export interface ChatMessage {
   sender: string;
   timestamp: string;
   type: 'text' | 'image' | 'link' | 'emoji';
-  category?: '技术讨论' | '生活话题' | '职业发展' | '资源分享' | '日常交流' | '其他';
+  category?: string;
   tags?: string[];
   isHighlight?: boolean;
 }
@@ -28,7 +28,7 @@ export interface HighlightTopic {
   participants: string[];
   timeRange: string;
   category: string;
-  significance: '重要' | '有趣' | '信息量大';
+  significance: string;
 }
 
 export interface ResourceShare {
