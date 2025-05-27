@@ -37,9 +37,9 @@ copy_files() {
     cp README.md dist/ 2>/dev/null || echo "⚠️ README.md 不存在，跳过复制"
     
     # 复制项目图片资源
-    if [ -d "../public/images" ]; then
+    if [ -d "./images" ]; then
         mkdir -p dist/images
-        cp -r ../public/images/* dist/images/
+        cp -r ./images/* dist/images/
         echo "✅ 图片资源复制完成"
     else
         echo "⚠️ 图片目录不存在，请确保项目图片正确放置"
@@ -75,10 +75,10 @@ update_image_paths() {
     echo "🔄 更新图片路径..."
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS
-        sed -i '' 's|../public/images/|./images/|g' dist/index.html
+        sed -i '' 's|./images/|./images/|g' dist/index.html
     else
         # Linux
-        sed -i 's|../public/images/|./images/|g' dist/index.html
+        sed -i 's|./images/|./images/|g' dist/index.html
     fi
     echo "✅ 图片路径更新完成"
 }
