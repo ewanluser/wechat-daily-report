@@ -1,0 +1,27 @@
+{
+  "name": "wechat-daily-report-website",
+  "version": "1.0.0",
+  "description": "微信群聊日报生成器官方网站",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python3 -m http.server 3000",
+    "build": "echo 'Static site - no build needed'",
+    "start": "python3 -m http.server 3000",
+    "deploy": "vercel --prod",
+    "preview": "vercel"
+  },
+  "keywords": [
+    "wechat",
+    "daily-report",
+    "ai",
+    "electron",
+    "chat-analysis"
+  ],
+  "author": "mengjian",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mengjian-github/wechat-daily-report.git"
+  },
+  "homepage": "https://github.com/mengjian-github/wechat-daily-report#readme"
+} 

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信群聊日报生成器 - 智能分析群聊，生成精美日报</title>
+    <meta name="description" content="基于AI的微信群聊分析工具，自动生成精美日报摘要，提取话题精华、群友金句和跟进事项。支持macOS、Windows、Linux跨平台使用。">
+    <meta name="keywords" content="微信群聊,日报生成器,AI分析,Electron,桌面应用">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="微信群聊日报生成器">
+    <meta property="og:description" content="基于AI的微信群聊分析工具，自动生成精美日报摘要">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="./images/product.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <i class="fas fa-newspaper"></i>
+                <span>微信群聊日报</span>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <a href="#features" class="nav-link">功能特色</a>
+                <a href="#download" class="nav-link">立即下载</a>
+                <a href="#screenshots" class="nav-link">产品截图</a>
+                <a href="#contact" class="nav-link">联系我们</a>
+                <a href="https://github.com/mengjian-github/wechat-daily-report" class="nav-link github-link" target="_blank">
+                    <i class="fab fa-github"></i>
+                </a>
+            </div>
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 英雄区域 -->
+    <section class="hero">
+        <div class="hero-background">
+            <div class="floating-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+                <div class="shape shape-4"></div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">
+                        智能分析群聊<br>
+                        <span class="gradient-text">生成精美日报</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        基于AI的微信群聊分析工具，自动提取话题精华、群友金句和跟进事项，
+                        一键生成美观的图片日报，让重要信息不再被遗漏。
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="#download" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            立即下载
+                        </a>
+                        <a href="https://github.com/mengjian-github/wechat-daily-report" class="btn btn-secondary" target="_blank">
+                            <i class="fab fa-github"></i>
+                            查看源码
+                        </a>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="stat">
+                            <div class="stat-number">10K+</div>
+                            <div class="stat-label">下载量</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number">5★</div>
+                            <div class="stat-label">用户评分</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number">3</div>
+                            <div class="stat-label">支持平台</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div class="product-showcase">
+                        <img src="../public/images/product.png" alt="微信群聊日报生成器界面截图" class="main-screenshot">
+                        <div class="floating-badge badge-1">
+                            <i class="fas fa-robot"></i>
+                            <span>AI 智能分析</span>
+                        </div>
+                        <div class="floating-badge badge-2">
+                            <i class="fas fa-image"></i>
+                            <span>精美图片日报</span>
+                        </div>
+                        <div class="floating-badge badge-3">
+                            <i class="fas fa-desktop"></i>
+                            <span>跨平台支持</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 功能特色 -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">功能特色</h2>
+                <p class="section-subtitle">强大的AI分析能力，让群聊信息变得更有价值</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>智能分析</h3>
+                    <p>基于先进的AI技术分析群聊内容，自动识别重要信息和关键话题，提取有价值的内容精华。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <h3>话题精华</h3>
+                    <p>智能识别讨论中的重要话题，生成详细摘要，帮助快速了解群聊的核心内容和讨论重点。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-quote-right"></i>
+                    </div>
+                    <h3>群友金句</h3>
+                    <p>自动提取群聊中的精彩言论和有价值的观点，记录那些值得回味的智慧瞬间。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <h3>跟进事项</h3>
+                    <p>智能识别群聊中提到的任务、决策和需要跟进的事项，确保重要工作不被遗漏。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-palette"></i>
+                    </div>
+                    <h3>美观日报</h3>
+                    <p>生成精美的图片格式日报，支持多种样式模板，方便导出分享和长期保存。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-laptop"></i>
+                    </div>
+                    <h3>跨平台</h3>
+                    <p>支持macOS、Windows、Linux三大主流操作系统，无论使用什么设备都能享受一致的体验。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 产品截图 -->
+    <section id="screenshots" class="screenshots">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">产品截图</h2>
+                <p class="section-subtitle">直观了解应用界面和使用体验</p>
+            </div>
+            <div class="screenshot-showcase">
+                <div class="screenshot-main">
+                    <img src="../public/images/product.png" alt="主界面截图" class="screenshot-img active" id="mainScreenshot">
+                </div>
+                <div class="screenshot-thumbnails">
+                    <div class="thumbnail active" data-src="../public/images/product.png">
+                        <img src="../public/images/product.png" alt="主界面">
+                        <div class="thumbnail-label">主界面</div>
+                    </div>
+                    <!-- 可以添加更多截图缩略图 -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 下载区域 -->
+    <section id="download" class="download">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">立即下载</h2>
+                <p class="section-subtitle">选择适合您操作系统的版本</p>
+            </div>
+            <div class="download-options">
+                <div class="download-card">
+                    <div class="platform-icon">
+                        <i class="fab fa-apple"></i>
+                    </div>
+                    <h3>macOS</h3>
+                    <p>支持 Intel 和 Apple Silicon 芯片</p>
+                    <div class="download-buttons">
+                        <a href="https://github.com/mengjian-github/wechat-daily-report/releases/download/v1.0.0/微信群聊日报-1.0.0.dmg" class="btn btn-download">
+                            <i class="fas fa-download"></i>
+                            Intel 版本
+                        </a>
+                        <a href="https://github.com/mengjian-github/wechat-daily-report/releases/download/v1.0.0/微信群聊日报-1.0.0-arm64.dmg" class="btn btn-download">
+                            <i class="fas fa-download"></i>
+                            Apple Silicon
+                        </a>
+                    </div>
+                </div>
+                <div class="download-card">
+                    <div class="platform-icon">
+                        <i class="fab fa-windows"></i>
+                    </div>
+                    <h3>Windows</h3>
+                    <p>支持 Windows 10 及以上版本</p>
+                    <div class="download-buttons">
+                        <a href="https://github.com/mengjian-github/wechat-daily-report/releases/download/v1.0.0/微信群聊日报 Setup 1.0.0.exe" class="btn btn-download">
+                            <i class="fas fa-download"></i>
+                            下载安装包
+                        </a>
+                    </div>
+                </div>
+                <div class="download-card">
+                    <div class="platform-icon">
+                        <i class="fab fa-linux"></i>
+                    </div>
+                    <h3>Linux</h3>
+                    <p>AppImage 格式，无需安装直接运行</p>
+                    <div class="download-buttons">
+                        <a href="https://github.com/mengjian-github/wechat-daily-report/releases/download/v1.0.0/微信群聊日报-1.0.0.AppImage" class="btn btn-download">
+                            <i class="fas fa-download"></i>
+                            下载 AppImage
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="download-info">
+                <div class="info-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>安全可靠，开源透明</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-sync"></i>
+                    <span>定期更新，持续优化</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-user-friends"></i>
+                    <span>活跃社区，快速支持</span>
+                </div>
+            </div>
+            <div class="macos-security-notice">
+                <div class="notice-content">
+                    <div class="notice-icon">
+                        <i class="fab fa-apple"></i>
+                    </div>
+                    <div class="notice-text">
+                        <h4>macOS 用户注意事项</h4>
+                        <p>如果遇到"应用已损坏，无法打开"的提示，请运行以下命令修复：</p>
+                        <code>sudo xattr -cr /Applications/微信群聊日报.app</code>
+                        <p><a href="https://github.com/mengjian-github/wechat-daily-report#macos-安全问题解决" target="_blank">查看详细解决方案 →</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 使用指南 -->
+    <section class="guide">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">快速上手</h2>
+                <p class="section-subtitle">四步即可开始使用微信群聊日报生成器</p>
+            </div>
+            <div class="guide-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>配置服务</h3>
+                        <p>首次启动应用后，配置AI服务和Chatlog连接</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>选择群聊</h3>
+                        <p>从下拉列表中选择要分析的微信群聊</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>选择日期</h3>
+                        <p>选择要分析的具体日期范围</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>生成日报</h3>
+                        <p>点击生成按钮，AI将自动分析并生成精美日报</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技术栈 -->
+    <section class="tech-stack">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">技术栈</h2>
+                <p class="section-subtitle">基于现代化技术构建，稳定可靠</p>
+            </div>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <div class="tech-icon">
+                        <i class="fab fa-js-square"></i>
+                    </div>
+                    <span>Electron</span>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">
+                        <i class="fab fa-react"></i>
+                    </div>
+                    <span>React</span>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">
+                        <i class="fab fa-js-square"></i>
+                    </div>
+                    <span>TypeScript</span>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">
+                        <i class="fas fa-cube"></i>
+                    </div>
+                    <span>Ant Design</span>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <span>Webpack</span>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <span>AI/OpenAI</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 联系我们 -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">联系我们</h2>
+                <p class="section-subtitle">有问题或建议？我们很乐意听到您的声音</p>
+            </div>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fab fa-github"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h3>GitHub</h3>
+                            <p>提交问题、建议或贡献代码</p>
+                            <a href="https://github.com/mengjian-github/wechat-daily-report" target="_blank">查看项目</a>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fab fa-weixin"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h3>微信</h3>
+                            <p>扫描应用内二维码添加作者微信</p>
+                            <span>在应用中查看</span>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h3>邮箱联系</h3>
+                            <p>通过微信获取邮箱地址</p>
+                            <span>请先添加微信</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="qr-code">
+                    <img src="../public/images/wx.jpg" alt="微信二维码" class="qr-image">
+                    <p>扫码添加作者微信</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="brand">
+                        <i class="fas fa-newspaper"></i>
+                        <span>微信群聊日报</span>
+                    </div>
+                    <p>智能分析群聊，生成精美日报</p>
+                </div>
+                <div class="footer-links">
+                    <div class="link-group">
+                        <h4>产品</h4>
+                        <a href="#features">功能特色</a>
+                        <a href="#download">下载</a>
+                        <a href="#screenshots">截图</a>
+                    </div>
+                    <div class="link-group">
+                        <h4>开发</h4>
+                        <a href="https://github.com/mengjian-github/wechat-daily-report" target="_blank">GitHub</a>
+                        <a href="https://github.com/mengjian-github/wechat-daily-report/releases" target="_blank">发布历史</a>
+                        <a href="https://github.com/mengjian-github/wechat-daily-report/issues" target="_blank">问题反馈</a>
+                    </div>
+                    <div class="link-group">
+                        <h4>支持</h4>
+                        <a href="#contact">联系我们</a>
+                        <a href="https://github.com/mengjian-github/wechat-daily-report/blob/main/README.md" target="_blank">使用文档</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 微信群聊日报生成器. All rights reserved. | MIT License</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="./script.js"></script>
+</body>
+</html> 
