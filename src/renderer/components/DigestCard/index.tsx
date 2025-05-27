@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Typography, List, Space, Button, Tag, Avatar, Tooltip } from 'antd';
+import { Typography, Button, Tag, Tooltip } from 'antd';
 import { 
   DownloadOutlined, 
   MessageOutlined,
@@ -11,25 +11,38 @@ import {
   ThunderboltOutlined,
   RiseOutlined,
   TrophyOutlined,
-  FireOutlined
+  FireOutlined,
+  FileTextOutlined,
+  WechatOutlined
 } from '@ant-design/icons';
-import { DailyDigest } from '../../types';
+import { DailyDigest } from '../../../shared/types';
 import html2canvas from 'html2canvas';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TextReportModal } from '../TextReport';
 import './styles.css';
 
 const { Text, Paragraph } = Typography;
 
 interface DigestCardProps {
   digest: DailyDigest;
+  textReport?: string;
   onDownload?: () => void;
+  onViewTextReport?: () => void;
+  onContactAuthor?: () => void;
 }
 
 const MOBILE_EXPORT_WIDTH = 750; // 适合手机的宽度
 
-export const DigestCard: React.FC<DigestCardProps> = ({ digest, onDownload }) => {
+export const DigestCard: React.FC<DigestCardProps> = ({ 
+  digest, 
+  textReport, 
+  onDownload, 
+  onViewTextReport,
+  onContactAuthor 
+}) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
+  const [showTextReport, setShowTextReport] = useState(false);
 
   const handleDownload = async () => {
     if (cardRef.current) {
@@ -51,7 +64,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({ digest, onDownload }) =>
       const canvas = await html2canvas(cardRef.current, { 
         backgroundColor: '#1F1A42', 
         scale: 2,
-        onclone: (clonedDoc) => {
+        onclone: (clonedDoc: Document) => {
           // 对克隆的DOM设置明确的颜色值
           const clonedElement = clonedDoc.body.querySelector('.digest-card') as HTMLElement;
           if (clonedElement) {
@@ -87,7 +100,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({ digest, onDownload }) =>
 
   const timeDistribution = digest.activityStats.messageDistribution;
   const mostActiveTime = Object.entries(timeDistribution)
-    .sort(([, a], [, b]) => b - a)[0][0];
+    .sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0] || 'morning';
 
   // 根据话题显示不同的图标
   const getCategoryIcon = (category: string) => {
@@ -119,7 +132,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({ digest, onDownload }) =>
             {digest.date} 群聊日报
           </div>
           <div className="avatar-group" style={{ marginTop: '20px' }}>
-            {digest.activityStats.activeUsers.slice(0, 5).map((user, index) => (
+            {digest.activityStats.activeUsers.slice(0, 5).map((user: string, index: number) => (
               <Tooltip key={index} title={user} placement="top">
                 <div 
                   className="avatar"
@@ -267,7 +280,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({ digest, onDownload }) =>
                     "{message.content}"
                   </div>
                   <div className="topic-meta">
-                    <span>—— {message.sender}</span>
+                    <span>—— {message.author}</span>
                     <span><ClockCircleOutlined style={{ marginRight: '6px' }} />{message.timestamp}</span>
                   </div>
                 </motion.div>
@@ -309,11 +322,16 @@ export const DigestCard: React.FC<DigestCardProps> = ({ digest, onDownload }) =>
                     }}>
                       {item.priority}
                     </Tag>
-                    <div>{item.item}</div>
+                    <div>{item.title}</div>
                   </div>
+                  {item.description && (
+                    <div className="topic-summary" style={{ marginTop: '8px' }}>
+                      {item.description}
+                    </div>
+                  )}
                   <div className="topic-meta" style={{ marginTop: '10px' }}>
-                    {item.dueDate && (
-                      <span><ClockCircleOutlined style={{ marginRight: '6px' }} />截止：{item.dueDate}</span>
+                    {item.deadline && (
+                      <span><ClockCircleOutlined style={{ marginRight: '6px' }} />截止：{item.deadline}</span>
                     )}
                     {item.assignee && (
                       <span><UserOutlined style={{ marginRight: '6px' }} />负责：{item.assignee}</span>
@@ -325,12 +343,14 @@ export const DigestCard: React.FC<DigestCardProps> = ({ digest, onDownload }) =>
           )}
         </AnimatePresence>
         
-        {/* 下载按钮 */}
+        {/* 操作按钮 */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'center',
+          gap: '12px',
           marginTop: '32px',
-          marginBottom: '8px'
+          marginBottom: '8px',
+          flexWrap: 'wrap'
         }}>
           <button
             className="download-btn"
@@ -339,8 +359,39 @@ export const DigestCard: React.FC<DigestCardProps> = ({ digest, onDownload }) =>
             <DownloadOutlined />
             保存为图片
           </button>
+          {textReport && (
+            <button
+              className="text-report-btn"
+              onClick={() => {
+                setShowTextReport(true);
+                onViewTextReport?.();
+              }}
+            >
+              <FileTextOutlined />
+              查看文本日报
+            </button>
+          )}
+          <button
+            className="contact-btn"
+            onClick={() => onContactAuthor?.()}
+            title="联系作者反馈问题或建议"
+          >
+            <WechatOutlined />
+            联系作者
+          </button>
         </div>
       </div>
+
+      {/* 文本日报弹窗 */}
+      {textReport && (
+        <TextReportModal
+          visible={showTextReport}
+          onCancel={() => setShowTextReport(false)}
+          textReport={textReport}
+          chatName={digest.chatGroupName}
+          date={digest.date}
+        />
+      )}
     </motion.div>
   );
 }; 

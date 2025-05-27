@@ -10,6 +10,17 @@
 
 # production
 /build
+/dist
+
+# electron
+/release
+/out
+*.dmg
+*.exe
+*.AppImage
+*.snap
+*.deb
+*.rpm
 
 # misc
 .DS_Store
