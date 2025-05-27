@@ -9,7 +9,7 @@
   ],
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "(.*)",
       "headers": [
         {
           "key": "X-Content-Type-Options",
@@ -30,7 +30,7 @@
       ]
     },
     {
-      "source": "/(.*\\.(css|js|html|ico|png|jpg|jpeg|gif|svg|woff2|woff))",
+      "source": ".:css|js|html|ico|png|jpg|jpeg|gif|svg|woff2|woff$",
       "headers": [
         {
           "key": "Cache-Control",
