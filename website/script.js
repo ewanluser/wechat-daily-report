@@ -304,8 +304,8 @@ window.addEventListener('scroll', debouncedScrollHandler);
 // Preload critical images
 function preloadImages() {
     const criticalImages = [
-        '../public/images/product.png',
-        '../public/images/wx.jpg'
+        './images/product.png',
+        './images/wx.jpg'
     ];
     
     criticalImages.forEach(src => {
