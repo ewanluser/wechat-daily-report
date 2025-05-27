@@ -437,4 +437,14 @@
   .qr-tips {
     font-size: 11px;
   }
+}
+
+/* 可点击项目样式增强 */
+.contact-item.clickable:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+}
+
+.contact-item.clickable:active {
+  transform: translateY(-2px);
 } 

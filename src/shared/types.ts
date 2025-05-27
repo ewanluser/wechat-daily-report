@@ -29,11 +29,19 @@ export interface ChatlogChatroom {
 }
 
 export interface ChatlogMessage {
-  id: string;
+  id?: string;
+  seq?: number;
   type: number;
   talker: string;
+  talkerName?: string;
   content: string;
-  timestamp: number;
+  timestamp?: number;
+  time?: string;
+  sender?: string;
+  senderName?: string;
+  isChatRoom?: boolean;
+  isSelf?: boolean;
+  subType?: number;
   roomTopic?: string;
 }
 
@@ -68,13 +76,7 @@ export interface QuotableMessage {
   context?: string;
 }
 
-export interface FollowUp {
-  title: string;
-  description: string;
-  priority: '高' | '中' | '低';
-  deadline?: string;
-  assignee?: string;
-}
+
 
 export interface DailyDigest {
   id: string;
@@ -84,7 +86,6 @@ export interface DailyDigest {
   topicHighlights: TopicHighlight[];
   activityStats: ActivityStats;
   quotableMessages: QuotableMessage[];
-  followUps: FollowUp[];
 }
 
 export interface GeneratedReport {

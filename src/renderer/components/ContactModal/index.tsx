@@ -107,13 +107,19 @@ export const ContactModal: React.FC<ContactModalProps> = ({
               </div>
             </div>
             
-            <div className="contact-item github">
+            <div 
+              className="contact-item github clickable"
+              onClick={() => {
+                window.open('https://github.com/mengjian-github/wechat-daily-report', '_blank');
+              }}
+              title="点击访问GitHub项目"
+            >
               <div className="contact-icon">
                 <GithubOutlined />
               </div>
               <div className="contact-info">
-                <div className="contact-title">GitHub</div>
-                <div className="contact-desc">mengjian-github</div>
+                <div className="contact-title">GitHub 项目</div>
+                <div className="contact-desc">mengjian-github/wechat-daily-report</div>
               </div>
             </div>
             

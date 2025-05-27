@@ -7,7 +7,6 @@ import {
   ClockCircleOutlined,
   BulbOutlined,
   StarOutlined,
-  ScheduleOutlined,
   ThunderboltOutlined,
   RiseOutlined,
   TrophyOutlined,
@@ -48,8 +47,15 @@ export const DigestCard: React.FC<DigestCardProps> = ({
     if (cardRef.current) {
       setExporting(true);
       await new Promise(r => setTimeout(r, 50));
-      const btn = cardRef.current.querySelector('.download-btn');
-      if (btn) (btn as HTMLElement).style.display = 'none';
+      
+      // 隐藏所有按钮
+      const allButtons = cardRef.current.querySelectorAll('.download-btn, .text-report-btn, .contact-btn');
+      const originalButtonStyles: string[] = [];
+      allButtons.forEach((btn, index) => {
+        const htmlBtn = btn as HTMLElement;
+        originalButtonStyles[index] = htmlBtn.style.display;
+        htmlBtn.style.display = 'none';
+      });
 
       // 临时保存原样式
       const prevWidth = cardRef.current.style.width;
@@ -87,7 +93,13 @@ export const DigestCard: React.FC<DigestCardProps> = ({
       cardRef.current.style.width = prevWidth;
       cardRef.current.style.fontSize = prevFontSize;
       cardRef.current.style.padding = prevPadding;
-      if (btn) (btn as HTMLElement).style.display = '';
+      
+      // 恢复所有按钮的显示
+      allButtons.forEach((btn, index) => {
+        const htmlBtn = btn as HTMLElement;
+        htmlBtn.style.display = originalButtonStyles[index] || '';
+      });
+      
       setExporting(false);
 
       const link = document.createElement('a');
@@ -215,7 +227,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({
                 <h3 className="section-title">话题精华</h3>
               </div>
               
-              {digest.topicHighlights.map((topic, index) => (
+              {digest.topicHighlights.slice(0, 3).map((topic, index) => (
                 <motion.div 
                   key={index}
                   className="topic-card"
@@ -262,7 +274,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({
                 <h3 className="section-title">群友金句</h3>
               </div>
               
-              {digest.quotableMessages.map((message, index) => (
+              {digest.quotableMessages.slice(0, 3).map((message, index) => (
                 <motion.div 
                   key={index}
                   className="topic-card"
@@ -287,60 +299,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({
               ))}
             </motion.div>
           )}
-          
-          {/* 待跟进事项 */}
-          {digest.followUps.length > 0 && (
-            <motion.div 
-              className="section"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <div className="section-header">
-                <span className="section-icon">
-                  <ScheduleOutlined />
-                </span>
-                <h3 className="section-title">待跟进事项</h3>
-              </div>
-              
-              {digest.followUps.map((item, index) => (
-                <motion.div 
-                  key={index}
-                  className="topic-card"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + index * 0.1 }}
-                >
-                  <div className="topic-title" style={{ alignItems: 'flex-start' }}>
-                    <Tag style={{ 
-                      background: 
-                        item.priority === '高' ? 'linear-gradient(135deg, #ff4b1f, #ff9068)' :
-                        item.priority === '中' ? 'linear-gradient(135deg, #f7b733, #fc4a1a)' :
-                        'linear-gradient(135deg, #56ab2f, #a8e063)',
-                      marginRight: '8px',
-                      marginTop: '2px'
-                    }}>
-                      {item.priority}
-                    </Tag>
-                    <div>{item.title}</div>
-                  </div>
-                  {item.description && (
-                    <div className="topic-summary" style={{ marginTop: '8px' }}>
-                      {item.description}
-                    </div>
-                  )}
-                  <div className="topic-meta" style={{ marginTop: '10px' }}>
-                    {item.deadline && (
-                      <span><ClockCircleOutlined style={{ marginRight: '6px' }} />截止：{item.deadline}</span>
-                    )}
-                    {item.assignee && (
-                      <span><UserOutlined style={{ marginRight: '6px' }} />负责：{item.assignee}</span>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
+
         </AnimatePresence>
         
         {/* 操作按钮 */}
