@@ -72,8 +72,38 @@ jobs:
           echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "新版本号: $NEW_VERSION"
 
-  build-and-release:
+  update-version:
     needs: check-changes
+    if: needs.check-changes.outputs.should-release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: 更新源码中的版本号
+        run: |
+          # 更新package.json中的版本号
+          npm version ${{ needs.check-changes.outputs.new-version }} --no-git-tag-version --no-commit-hooks
+          
+          # 配置git用户信息
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 提交版本号更新
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${{ needs.check-changes.outputs.new-version }}"
+          git push
+
+  build-and-release:
+    needs: [check-changes, update-version]
     if: needs.check-changes.outputs.should-release == 'true'
     strategy:
       matrix:
@@ -90,16 +120,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main  # 确保获取最新的代码（包含版本号更新）
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: 'npm'
-
-      - name: 更新版本号
-        run: |
-          npm version ${{ needs.check-changes.outputs.new-version }} --no-git-tag-version --no-commit-hooks
 
       - name: Install dependencies
         run: npm ci
@@ -126,7 +153,7 @@ jobs:
           retention-days: 1
 
   create-release:
-    needs: [check-changes, build-and-release]
+    needs: [check-changes, update-version, build-and-release]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
