@@ -510,4 +510,131 @@
   .text-report-btn {
     display: none !important;
   }
+}
+
+/* 产品水印区域 */
+.product-watermark {
+  display: none; /* 默认隐藏，只在导出时显示 */
+  margin-top: 20px;
+  padding: 20px 30px;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid var(--border-color);
+}
+
+.product-watermark.exporting {
+  display: block !important;
+}
+
+.watermark-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.watermark-left {
+  flex: 1;
+}
+
+.product-name {
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.product-tagline {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.product-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-link {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  font-family: 'SF Mono', Monaco, Inconsolata, 'Roboto Mono', monospace;
+}
+
+.watermark-right {
+  flex-shrink: 0;
+}
+
+.brand-logo {
+  text-align: center;
+}
+
+.logo-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 6px;
+  box-shadow: 0 4px 12px rgba(123, 104, 238, 0.3);
+}
+
+.logo-text {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.brand-subtitle {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.watermark-separator {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+  margin-top: 16px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .product-watermark {
+    padding: 16px 20px;
+  }
+  
+  .watermark-content {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  
+  .product-links {
+    align-items: center;
+  }
+  
+  .logo-circle {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .product-name {
+    font-size: 16px;
+  }
+  
+  .product-tagline {
+    font-size: 13px;
+  }
+  
+  .product-link {
+    font-size: 11px;
+  }
 } 

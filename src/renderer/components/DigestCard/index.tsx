@@ -57,6 +57,13 @@ export const DigestCard: React.FC<DigestCardProps> = ({
         htmlBtn.style.display = 'none';
       });
 
+      // 显示产品水印
+      const watermark = cardRef.current.querySelector('.product-watermark') as HTMLElement;
+      const originalWatermarkDisplay = watermark?.style.display || '';
+      if (watermark) {
+        watermark.style.display = 'block';
+      }
+
       // 临时保存原样式
       const prevWidth = cardRef.current.style.width;
       const prevFontSize = cardRef.current.style.fontSize;
@@ -70,21 +77,30 @@ export const DigestCard: React.FC<DigestCardProps> = ({
       const canvas = await html2canvas(cardRef.current, { 
         backgroundColor: '#1F1A42', 
         scale: 2,
+        useCORS: true, // 启用跨域，确保微信二维码图片能正常加载
+        allowTaint: true,
         onclone: (clonedDoc: Document) => {
           // 对克隆的DOM设置明确的颜色值
           const clonedElement = clonedDoc.body.querySelector('.digest-card') as HTMLElement;
           if (clonedElement) {
             // 设置主要文本颜色
-            const titles = clonedElement.querySelectorAll('.section-title, .topic-title, .card-header-title, .stat-card-value, .message-content');
+            const titles = clonedElement.querySelectorAll('.section-title, .topic-title, .card-header-title, .stat-card-value, .message-content, .product-name');
             titles.forEach(el => {
               (el as HTMLElement).style.color = '#FFFFFF';
             });
             
             // 设置次要文本颜色
-            const subtitles = clonedElement.querySelectorAll('.topic-summary, .topic-meta, .card-header-subtitle, .stat-card-title');
+            const subtitles = clonedElement.querySelectorAll('.topic-summary, .topic-meta, .card-header-subtitle, .stat-card-title, .product-tagline, .product-link, .qr-label');
             subtitles.forEach(el => {
               (el as HTMLElement).style.color = 'rgba(255, 255, 255, 0.7)';
             });
+
+            // 确保水印区域可见
+            const watermarkEl = clonedElement.querySelector('.product-watermark') as HTMLElement;
+            if (watermarkEl) {
+              watermarkEl.style.display = 'block';
+              watermarkEl.style.visibility = 'visible';
+            }
           }
         }
       });
@@ -99,11 +115,16 @@ export const DigestCard: React.FC<DigestCardProps> = ({
         const htmlBtn = btn as HTMLElement;
         htmlBtn.style.display = originalButtonStyles[index] || '';
       });
+
+      // 隐藏产品水印
+      if (watermark) {
+        watermark.style.display = originalWatermarkDisplay;
+      }
       
       setExporting(false);
 
       const link = document.createElement('a');
-      link.download = `${digest.chatGroupName}-${digest.date}.png`;
+      link.download = `${digest.chatGroupName}-群聊日报-${digest.date}-微信群聊日报生成器.png`;
       link.href = canvas.toDataURL();
       link.click();
     }
@@ -545,6 +566,29 @@ export const DigestCard: React.FC<DigestCardProps> = ({
             <WechatOutlined />
             联系作者
           </button>
+        </div>
+
+        {/* 产品标识区域 - 只在导出时显示 */}
+        <div className={`product-watermark ${exporting ? 'exporting' : ''}`}>
+          <div className="watermark-content">
+            <div className="watermark-left">
+              <div className="product-name">微信群聊日报生成器</div>
+              <div className="product-tagline">AI智能分析 · 精美日报生成</div>
+              <div className="product-links">
+                <span className="product-link">🌐 www.wechatdaily.online</span>
+                <span className="product-link">📱 GitHub: mengjian-github/wechat-daily-report</span>
+              </div>
+            </div>
+            <div className="watermark-right">
+              <div className="brand-logo">
+                <div className="logo-circle">
+                  <span className="logo-text">群日报</span>
+                </div>
+                <div className="brand-subtitle">让群聊更有价值</div>
+              </div>
+            </div>
+          </div>
+          <div className="watermark-separator"></div>
         </div>
       </div>
 
