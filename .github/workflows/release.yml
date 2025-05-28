@@ -45,21 +45,29 @@ jobs:
         run: |
           # 获取当前版本
           CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "当前版本: $CURRENT_VERSION"
           
           # 获取最近的提交信息
           COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "提交信息: $COMMIT_MSG"
           
           # 根据提交类型决定版本更新策略
           if [[ "$COMMIT_MSG" =~ (BREAKING|breaking) ]]; then
             # 主版本更新
+            echo "检测到破坏性更改，执行主版本更新"
             NEW_VERSION=$(npm version major --no-git-tag-version --no-commit-hooks)
           elif [[ "$COMMIT_MSG" =~ (feat) ]]; then
             # 次版本更新
+            echo "检测到新功能，执行次版本更新"
             NEW_VERSION=$(npm version minor --no-git-tag-version --no-commit-hooks)
           else
             # 补丁版本更新
+            echo "执行补丁版本更新"
             NEW_VERSION=$(npm version patch --no-git-tag-version --no-commit-hooks)
           fi
+          
+          # 清理版本号格式（移除可能的 'v' 前缀）
+          NEW_VERSION=$(echo "$NEW_VERSION" | sed 's/^v//')
           
           echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "新版本号: $NEW_VERSION"
@@ -212,16 +220,86 @@ jobs:
         run: |
           cd website
           VERSION="${{ needs.check-changes.outputs.new-version }}"
+          # 确保版本号格式正确（添加 v 前缀用于 GitHub release tag）
+          if [[ ! "$VERSION" =~ ^v ]]; then
+            VERSION="v$VERSION"
+          fi
           REPO="mengjian-github/wechat-daily-report"
+          
+          echo "使用版本号: $VERSION"
+          echo "仓库: $REPO"
           
           # 等待release完全创建
           sleep 30
           
-          # 获取下载链接
-          MAC_INTEL_URL=$(gh release view $VERSION --repo $REPO --json assets -q '.assets[] | select(.name | test(".*\\.dmg$") and (.name | contains("arm64") | not)) | .browser_download_url')
-          MAC_ARM_URL=$(gh release view $VERSION --repo $REPO --json assets -q '.assets[] | select(.name | contains("arm64") and (.name | test(".*\\.dmg$"))) | .browser_download_url')
-          WINDOWS_URL=$(gh release view $VERSION --repo $REPO --json assets -q '.assets[] | select(.name | test(".*\\.exe$")) | .browser_download_url')
-          LINUX_URL=$(gh release view $VERSION --repo $REPO --json assets -q '.assets[] | select(.name | test(".*\\.AppImage$")) | .browser_download_url')
+          # 验证release是否存在
+          echo "检查release $VERSION 是否存在..."
+          if ! gh release view $VERSION --repo $REPO > /dev/null 2>&1; then
+            echo "错误：Release $VERSION 不存在"
+            exit 1
+          fi
+          
+          # 获取release信息并调试
+          echo "获取release信息..."
+          RELEASE_INFO=$(gh release view $VERSION --repo $REPO --json assets 2>&1)
+          RELEASE_EXIT_CODE=$?
+          
+          echo "GitHub CLI 退出码: $RELEASE_EXIT_CODE"
+          echo "Release信息原始输出: $RELEASE_INFO"
+          
+          if [ $RELEASE_EXIT_CODE -ne 0 ]; then
+            echo "错误：无法获取release信息"
+            echo "错误详情: $RELEASE_INFO"
+            exit 1
+          fi
+          
+          # 验证返回的是有效的JSON
+          if ! echo "$RELEASE_INFO" | jq . > /dev/null 2>&1; then
+            echo "错误：返回的不是有效的JSON格式"
+            echo "原始输出: $RELEASE_INFO"
+            exit 1
+          fi
+          
+          # 检查是否有assets
+          ASSETS_COUNT=$(echo "$RELEASE_INFO" | jq '.assets | length' 2>/dev/null)
+          if [ $? -ne 0 ] || [ -z "$ASSETS_COUNT" ]; then
+            echo "错误：无法解析assets信息"
+            exit 1
+          fi
+          
+          echo "Assets数量: $ASSETS_COUNT"
+          
+          if [ "$ASSETS_COUNT" -eq 0 ]; then
+            echo "警告：Release中没有找到任何assets"
+            exit 0
+          fi
+          
+          # 列出所有assets用于调试
+          echo "所有assets:"
+          echo "$RELEASE_INFO" | jq -r '.assets[] | .name'
+          
+          # 获取下载链接，添加错误处理
+          echo "获取下载链接..."
+          
+          # 使用更简单的方法获取下载链接
+          MAC_INTEL_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | test("\\.dmg$")) | select(.name | test("arm64") | not) | .browser_download_url' 2>/dev/null | head -1)
+          MAC_ARM_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | test("\\.dmg$")) | select(.name | test("arm64")) | .browser_download_url' 2>/dev/null | head -1)
+          WINDOWS_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | test("\\.exe$")) | .browser_download_url' 2>/dev/null | head -1)
+          LINUX_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | test("\\.AppImage$")) | .browser_download_url' 2>/dev/null | head -1)
+          
+          # 如果上面的查询失败，尝试更宽松的匹配
+          if [ -z "$MAC_INTEL_URL" ] || [ "$MAC_INTEL_URL" = "null" ]; then
+            MAC_INTEL_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".dmg")) | select(.name | contains("arm64") | not) | .browser_download_url' 2>/dev/null | head -1)
+          fi
+          if [ -z "$MAC_ARM_URL" ] || [ "$MAC_ARM_URL" = "null" ]; then
+            MAC_ARM_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".dmg")) | select(.name | contains("arm64")) | .browser_download_url' 2>/dev/null | head -1)
+          fi
+          if [ -z "$WINDOWS_URL" ] || [ "$WINDOWS_URL" = "null" ]; then
+            WINDOWS_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".exe")) | .browser_download_url' 2>/dev/null | head -1)
+          fi
+          if [ -z "$LINUX_URL" ] || [ "$LINUX_URL" = "null" ]; then
+            LINUX_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".AppImage")) | .browser_download_url' 2>/dev/null | head -1)
+          fi
           
           echo "获取到的下载链接："
           echo "macOS Intel: $MAC_INTEL_URL"
@@ -229,21 +307,23 @@ jobs:
           echo "Windows: $WINDOWS_URL"
           echo "Linux: $LINUX_URL"
           
-          # 更新HTML文件中的下载链接
-          if [ -n "$MAC_INTEL_URL" ]; then
+          # 更新HTML文件中的下载链接，只有当URL不为空且不为"null"时才更新
+          if [ -n "$MAC_INTEL_URL" ] && [ "$MAC_INTEL_URL" != "null" ]; then
+            echo "更新macOS Intel下载链接..."
             sed -i "s|https://github.com/mengjian-github/wechat-daily-report/releases/latest/download/[^\"]*\\.dmg|$MAC_INTEL_URL|g" index.html
           fi
-          if [ -n "$MAC_ARM_URL" ]; then
+          if [ -n "$MAC_ARM_URL" ] && [ "$MAC_ARM_URL" != "null" ]; then
+            echo "更新macOS ARM下载链接..."
             sed -i "s|https://github.com/mengjian-github/wechat-daily-report/releases/latest/download/[^\"]*arm64[^\"]*\\.dmg|$MAC_ARM_URL|g" index.html
           fi
-          if [ -n "$WINDOWS_URL" ]; then
+          if [ -n "$WINDOWS_URL" ] && [ "$WINDOWS_URL" != "null" ]; then
+            echo "更新Windows下载链接..."
             sed -i "s|https://github.com/mengjian-github/wechat-daily-report/releases/latest/download/[^\"]*\\.exe|$WINDOWS_URL|g" index.html
           fi
-          if [ -n "$LINUX_URL" ]; then
+          if [ -n "$LINUX_URL" ] && [ "$LINUX_URL" != "null" ]; then
+            echo "更新Linux下载链接..."
             sed -i "s|https://github.com/mengjian-github/wechat-daily-report/releases/latest/download/[^\"]*\\.AppImage|$LINUX_URL|g" index.html
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 提交官网更新
         run: |
