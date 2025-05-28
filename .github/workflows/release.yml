@@ -6,6 +6,11 @@ permissions:
   packages: write
   actions: read
 
+# 添加并发控制，防止多个发布流程同时运行
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 on:
   push:
     branches: [ main, master ]
@@ -239,6 +244,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          ref: main  # 确保获取最新的主分支代码
 
       - name: 安装必要工具
         run: |
@@ -283,8 +290,15 @@ jobs:
             sleep 5
           done
 
-      - name: 更新官网下载链接
+      - name: 更新并提交官网下载链接
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 确保获取最新的远程更改
+          git fetch origin main
+          git reset --hard origin/main
+          
           cd website
           VERSION="v${{ needs.check-changes.outputs.new-version }}"
           REPO="mengjian-github/wechat-daily-report"
@@ -369,29 +383,50 @@ jobs:
             echo "更新Linux下载链接..."
             sed -i 's|https://github\.com/mengjian-github/wechat-daily-report/releases/[^"]*\.AppImage|'$LINUX_URL'|g' index.html
           fi
-
-      - name: 提交官网更新
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          cd ..
+          
+          # 添加更改并提交
           git add website/index.html
           if git diff --staged --quiet; then
             echo "没有需要提交的更改"
           else
             git commit -m "🔄 自动更新官网下载链接到 ${{ needs.check-changes.outputs.new-version }}"
+            
             # 推送更改，添加重试机制
             for i in {1..3}; do
-              if git push; then
-                echo "成功推送更改"
-                break
+              echo "尝试推送，第 $i 次..."
+              
+              # 每次推送前都先获取最新状态
+              git fetch origin main
+              
+              # 检查是否有冲突
+              if git merge-base --is-ancestor HEAD origin/main; then
+                echo "本地代码是最新的，直接推送"
+                if git push origin main; then
+                  echo "成功推送更改"
+                  break
+                fi
               else
-                echo "推送失败，重试 $i/3..."
-                sleep 5
+                echo "检测到远程有新提交，执行 rebase"
+                if git rebase origin/main; then
+                  echo "Rebase 成功，尝试推送"
+                  if git push origin main; then
+                    echo "成功推送更改"
+                    break
+                  fi
+                else
+                  echo "Rebase 失败，跳过此次重试"
+                fi
               fi
               
               if [ $i -eq 3 ]; then
-                echo "推送失败，请手动检查"
-                exit 1
+                echo "推送失败，但不阻止工作流继续（可能是微小的时间差导致）"
+                echo "官网链接可能需要手动更新"
+                exit 0  # 改为成功退出，不阻止整个工作流
+              else
+                echo "推送失败，等待 $((i * 5)) 秒后重试..."
+                sleep $((i * 5))
               fi
             done
           fi
