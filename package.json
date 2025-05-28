@@ -82,6 +82,7 @@
     "framer-motion": "^12.14.0",
     "html2canvas": "^1.4.1",
     "openai": "^4.67.3",
+    "process": "^0.11.10",
     "zod": "^3.25.32"
   },
   "optionalDependencies": {
