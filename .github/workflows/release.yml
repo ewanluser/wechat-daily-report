@@ -1,5 +1,11 @@
 name: 自动版本发布
 
+# 添加权限配置
+permissions:
+  contents: write
+  packages: write
+  actions: read
+
 on:
   push:
     branches: [ main, master ]
@@ -20,7 +26,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets. GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 检查是否需要发布
         id: check
@@ -75,7 +81,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets. GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -131,13 +137,6 @@ jobs:
           find ./artifacts -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" | xargs -I {} cp {} release/
           ls -la release/
 
-      - name: 创建Git标签
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag ${{ needs.check-changes.outputs.new-version }}
-          git push origin ${{ needs.check-changes.outputs.new-version }}
-
       - name: 生成发布说明
         id: release-notes
         run: |
@@ -191,7 +190,7 @@ jobs:
           draft: false
           prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets. GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   update-website:
     needs: [check-changes, create-release]
@@ -200,7 +199,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets. GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 安装GitHub CLI
         run: |
@@ -244,7 +243,7 @@ jobs:
             sed -i "s|https://github.com/mengjian-github/wechat-daily-report/releases/latest/download/[^\"]*\\.AppImage|$LINUX_URL|g" index.html
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets. GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 提交官网更新
         run: |
