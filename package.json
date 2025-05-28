@@ -22,7 +22,6 @@
     "dist:win": "npm run build && electron-builder --win",
     "dist:linux": "npm run build && electron-builder --linux",
     "dist:all": "npm run dist:mac && npm run dist:win && npm run dist:linux",
-    "release:prepare": "./scripts/create-release.sh",
     "clean": "rimraf dist build release"
   },
   "build": {

@@ -1,63 +1,267 @@
-name: Build & Release All Platforms
+name: 自动版本发布
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [ main, master ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'website/**'
 
 jobs:
-  build:
+  check-changes:
     runs-on: ubuntu-latest
+    outputs:
+      should-release: ${{ steps.check.outputs.should-release }}
+      new-version: ${{ steps.version.outputs.new-version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 检查是否需要发布
+        id: check
+        run: |
+          # 检查最近的提交是否包含版本更新关键词
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ "$COMMIT_MSG" =~ (feat|fix|perf|refactor|style|test|docs|build|ci|chore|breaking|BREAKING) ]]; then
+            echo "should-release=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 计算新版本号
+        id: version
+        if: steps.check.outputs.should-release == 'true'
+        run: |
+          # 获取当前版本
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          # 获取最近的提交信息
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          
+          # 根据提交类型决定版本更新策略
+          if [[ "$COMMIT_MSG" =~ (BREAKING|breaking) ]]; then
+            # 主版本更新
+            NEW_VERSION=$(npm version major --no-git-tag-version --no-commit-hooks)
+          elif [[ "$COMMIT_MSG" =~ (feat) ]]; then
+            # 次版本更新
+            NEW_VERSION=$(npm version minor --no-git-tag-version --no-commit-hooks)
+          else
+            # 补丁版本更新
+            NEW_VERSION=$(npm version patch --no-git-tag-version --no-commit-hooks)
+          fi
+          
+          echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "新版本号: $NEW_VERSION"
+
+  build-and-release:
+    needs: check-changes
+    if: needs.check-changes.outputs.should-release == 'true'
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    name: Build on ${{ matrix.os }}
+        include:
+          - os: macos-latest
+            platform: mac
+          - os: windows-latest
+            platform: win
+          - os: ubuntu-latest
+            platform: linux
+    runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'npm'
+
+      - name: 更新版本号
+        run: |
+          npm version ${{ needs.check-changes.outputs.new-version }} --no-git-tag-version --no-commit-hooks
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Build app
+      - name: Build application
         run: npm run build
 
-      - name: Package app
+      - name: Package application
         run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            npm run dist:linux
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+          if [ "${{ matrix.platform }}" = "mac" ]; then
             npm run dist:mac
-          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          elif [ "${{ matrix.platform }}" = "win" ]; then
             npm run dist:win
+          else
+            npm run dist:linux
           fi
         shell: bash
 
-      - name: Upload artifacts
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.os }}
-          path: |
-            release/
-            dist/
+          name: release-${{ matrix.platform }}
+          path: release/
+          retention-days: 1
 
-  release:
-    needs: build
+  create-release:
+    needs: [check-changes, build-and-release]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
 
-      - name: Create Release
+      - name: 整理发布文件
+        run: |
+          mkdir -p release
+          find ./artifacts -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" | xargs -I {} cp {} release/
+          ls -la release/
+
+      - name: 创建Git标签
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ needs.check-changes.outputs.new-version }}
+          git push origin ${{ needs.check-changes.outputs.new-version }}
+
+      - name: 生成发布说明
+        id: release-notes
+        run: |
+          VERSION="${{ needs.check-changes.outputs.new-version }}"
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          
+          cat > release_notes.md << EOF
+          ## 🎉 微信群聊日报生成器 $VERSION
+          
+          ### 📝 更新内容
+          $COMMIT_MSG
+          
+          ### ✨ 主要功能
+          - 🧠 **AI智能分析**：基于先进的AI技术分析群聊内容，自动识别重要信息
+          - 🎯 **话题精华提取**：智能识别讨论中的重要话题，生成详细摘要  
+          - 💬 **群友金句收集**：自动提取群聊中的精彩言论和有价值观点
+          - 📋 **跟进事项识别**：智能识别需要跟进的任务、决策和重要事项
+          - 🎨 **精美日报生成**：生成美观的图片格式日报，支持导出分享
+          - 💻 **跨平台支持**：支持 macOS、Windows、Linux 三大操作系统
+          
+          ### 📦 安装包说明
+          - **macOS**: 支持 Intel 和 Apple Silicon 芯片
+          - **Windows**: 适用于 Windows 10 及以上版本
+          - **Linux**: AppImage 格式，免安装直接运行
+          
+          ### 🚀 快速开始
+          1. 下载对应平台的安装包
+          2. 安装应用并启动
+          3. 配置AI服务设置
+          4. 选择群聊和日期范围
+          5. 一键生成精美日报
+          
+          ### 🔗 相关链接
+          - 📖 [使用文档](https://github.com/mengjian-github/wechat-daily-report#readme)
+          - 🐛 [问题反馈](https://github.com/mengjian-github/wechat-daily-report/issues)
+          - 💬 [讨论区](https://github.com/mengjian-github/wechat-daily-report/discussions)
+          
+          感谢所有用户的支持！如有问题请通过GitHub Issues反馈。
+          EOF
+
+      - name: 创建GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./artifacts/**/*.dmg,./artifacts/**/*.exe,./artifacts/**/*.AppImage
+          tag_name: ${{ needs.check-changes.outputs.new-version }}
+          name: "微信群聊日报生成器 ${{ needs.check-changes.outputs.new-version }}"
+          body_path: release_notes.md
+          files: |
+            release/*.dmg
+            release/*.exe
+            release/*.AppImage
+          draft: false
+          prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-website:
+    needs: [check-changes, create-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 安装GitHub CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh
+
+      - name: 更新官网下载链接
+        run: |
+          cd website
+          VERSION="${{ needs.check-changes.outputs.new-version }}"
+          REPO="mengjian-github/wechat-daily-report"
+          
+          # 等待release完全创建
+          sleep 30
+          
+          # 获取下载链接
+          MAC_INTEL_URL=$(gh release view $VERSION --repo $REPO --json assets -q '.assets[] | select(.name | test(".*\\.dmg$") and (.name | contains("arm64") | not)) | .browser_download_url')
+          MAC_ARM_URL=$(gh release view $VERSION --repo $REPO --json assets -q '.assets[] | select(.name | contains("arm64") and (.name | test(".*\\.dmg$"))) | .browser_download_url')
+          WINDOWS_URL=$(gh release view $VERSION --repo $REPO --json assets -q '.assets[] | select(.name | test(".*\\.exe$")) | .browser_download_url')
+          LINUX_URL=$(gh release view $VERSION --repo $REPO --json assets -q '.assets[] | select(.name | test(".*\\.AppImage$")) | .browser_download_url')
+          
+          echo "获取到的下载链接："
+          echo "macOS Intel: $MAC_INTEL_URL"
+          echo "macOS ARM: $MAC_ARM_URL"
+          echo "Windows: $WINDOWS_URL"
+          echo "Linux: $LINUX_URL"
+          
+          # 更新HTML文件中的下载链接
+          if [ -n "$MAC_INTEL_URL" ]; then
+            sed -i "s|https://github.com/mengjian-github/wechat-daily-report/releases/latest/download/[^\"]*\\.dmg|$MAC_INTEL_URL|g" index.html
+          fi
+          if [ -n "$MAC_ARM_URL" ]; then
+            sed -i "s|https://github.com/mengjian-github/wechat-daily-report/releases/latest/download/[^\"]*arm64[^\"]*\\.dmg|$MAC_ARM_URL|g" index.html
+          fi
+          if [ -n "$WINDOWS_URL" ]; then
+            sed -i "s|https://github.com/mengjian-github/wechat-daily-report/releases/latest/download/[^\"]*\\.exe|$WINDOWS_URL|g" index.html
+          fi
+          if [ -n "$LINUX_URL" ]; then
+            sed -i "s|https://github.com/mengjian-github/wechat-daily-report/releases/latest/download/[^\"]*\\.AppImage|$LINUX_URL|g" index.html
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 提交官网更新
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add website/index.html
+          if git diff --staged --quiet; then
+            echo "没有需要提交的更改"
+          else
+            git commit -m "🔄 自动更新官网下载链接到 ${{ needs.check-changes.outputs.new-version }}"
+            git push
+          fi
+
+      - name: 部署官网 (如果使用GitHub Pages)
+        run: |
+          cd website
+          if [ -f "deploy.sh" ]; then
+            chmod +x deploy.sh
+            ./deploy.sh --github-pages || echo "官网部署脚本执行完成"
+          fi 
