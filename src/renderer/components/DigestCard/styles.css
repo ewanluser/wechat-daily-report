@@ -515,10 +515,10 @@
 /* 产品水印区域 */
 .product-watermark {
   display: none; /* 默认隐藏，只在导出时显示 */
-  margin-top: 20px;
-  padding: 20px 30px;
-  background: rgba(255, 255, 255, 0.02);
-  border-top: 1px solid var(--border-color);
+  margin-top: 24px;
+  padding: 0;
+  background: transparent;
+  border-top: none;
 }
 
 .product-watermark.exporting {
@@ -526,10 +526,16 @@
 }
 
 .watermark-content {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 18px 22px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 20px;
+  position: relative;
 }
 
 .watermark-left {
@@ -537,21 +543,20 @@
 }
 
 .product-name {
-  color: var(--text-primary);
+  color: #FFFFFF;
   font-size: 18px;
   font-weight: 700;
-  margin-bottom: 6px;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin-bottom: 4px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.3px;
 }
 
 .product-tagline {
-  color: var(--text-secondary);
-  font-size: 14px;
-  margin-bottom: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  margin-bottom: 10px;
   font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 .product-links {
@@ -561,9 +566,13 @@
 }
 
 .product-link {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
-  font-family: 'SF Mono', Monaco, Inconsolata, 'Roboto Mono', monospace;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 .watermark-right {
@@ -575,66 +584,91 @@
 }
 
 .logo-circle {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7B68EE 0%, #9580FF 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 6px;
-  box-shadow: 0 4px 12px rgba(123, 104, 238, 0.3);
+  box-shadow: 
+    0 4px 12px rgba(123, 104, 238, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .logo-text {
-  color: #fff;
-  font-size: 14px;
+  color: #FFFFFF;
+  font-size: 12px;
   font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.5px;
 }
 
 .brand-subtitle {
-  color: var(--text-secondary);
-  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 9px;
   font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 .watermark-separator {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-color), transparent);
-  margin-top: 16px;
+  display: none;
 }
 
 /* 移动端适配 */
 @media (max-width: 768px) {
   .product-watermark {
-    padding: 16px 20px;
+    margin-top: 20px;
   }
   
   .watermark-content {
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
     text-align: center;
+    padding: 16px 18px;
   }
   
-  .product-links {
-    align-items: center;
+  .watermark-left {
+    order: 2;
   }
   
-  .logo-circle {
-    width: 50px;
-    height: 50px;
+  .watermark-right {
+    order: 1;
   }
   
   .product-name {
     font-size: 16px;
+    margin-bottom: 3px;
   }
   
   .product-tagline {
-    font-size: 13px;
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+  
+  .product-links {
+    align-items: center;
+    gap: 3px;
   }
   
   .product-link {
+    font-size: 10px;
+  }
+  
+  .logo-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    margin-bottom: 4px;
+  }
+  
+  .logo-text {
     font-size: 11px;
+  }
+  
+  .brand-subtitle {
+    font-size: 8px;
   }
 } 
