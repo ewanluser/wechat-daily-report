@@ -21,15 +21,18 @@ import {
   TeamOutlined,
   MessageOutlined,
   ApiOutlined,
-  WechatOutlined
+  WechatOutlined,
+  FileTextOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { SettingsModal } from '../../components/Settings';
 import { DigestCard } from '../../components/DigestCard';
 import { ContactModal } from '../../components/ContactModal';
+import { LogViewer } from '../../components/LogViewer';
 import { chatlogService } from '../../services/chatlogService';
 import { aiService } from '../../services/aiService';
 import { configService } from '../../services/configService';
+import { logService } from '../../services/logService';
 import { ChatlogChatroom, DailyDigest, GeneratedReport } from '../../../shared/types';
 
 const { Header, Content } = Layout;
@@ -39,6 +42,7 @@ const { Option } = Select;
 const DailyReport: React.FC = () => {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [contactVisible, setContactVisible] = useState(false);
+  const [logViewerVisible, setLogViewerVisible] = useState(false);
   const [chatrooms, setChatrooms] = useState<ChatlogChatroom[]>([]);
   const [selectedChatroom, setSelectedChatroom] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
@@ -48,6 +52,8 @@ const DailyReport: React.FC = () => {
   const [isConfigured, setIsConfigured] = useState(false);
 
   useEffect(() => {
+    // 记录应用启动日志
+    logService.info('应用启动', { timestamp: new Date().toISOString() }, 'DailyReport');
     checkConfiguration();
   }, []);
 
@@ -59,48 +65,48 @@ const DailyReport: React.FC = () => {
   }, [isConfigured]);
 
   const checkConfiguration = async () => {
-    console.log('🔧 开始检查配置...');
+    logService.info('🔧 开始检查配置...', null, 'DailyReport');
     try {
       const aiConfig = await configService.loadAIConfig();
       const chatlogConfig = await configService.loadChatlogConfig();
       
-      console.log('📋 加载的配置:', { 
+      logService.info('📋 加载的配置', { 
         aiConfig: aiConfig ? { ...aiConfig, apiKey: aiConfig.apiKey ? '***已设置***' : '未设置' } : null,
         chatlogConfig 
-      });
+      }, 'DailyReport');
       
       if (aiConfig && aiConfig.apiKey && chatlogConfig && chatlogConfig.baseUrl) {
-        console.log('✅ 配置项完整，开始配置服务...');
+        logService.info('✅ 配置项完整，开始配置服务...', null, 'DailyReport');
         
         // 配置AI服务
         aiService.configure(aiConfig);
-        console.log('🤖 AI服务配置完成');
+        logService.info('🤖 AI服务配置完成', null, 'DailyReport');
         
         // 测试Chatlog连接
-        console.log('🔗 开始配置Chatlog连接...');
+        logService.info('🔗 开始配置Chatlog连接...', null, 'DailyReport');
         await chatlogService.configure(chatlogConfig.baseUrl);
-        console.log('🔗 Chatlog服务配置完成，开始测试连接...');
+        logService.info('🔗 Chatlog服务配置完成，开始测试连接...', null, 'DailyReport');
         const testResult = await chatlogService.checkConnection();
-        console.log('🔗 Chatlog连接测试结果:', testResult);
+        logService.info('🔗 Chatlog连接测试结果', { connected: testResult }, 'DailyReport');
         
         if (testResult) {
           setIsConfigured(true);
-          console.log('✅ 配置检查完全通过');
+          logService.info('✅ 配置检查完全通过', null, 'DailyReport');
         } else {
           setIsConfigured(false);
-          console.log('❌ Chatlog连接失败');
+          logService.warn('❌ Chatlog连接失败', null, 'DailyReport');
         }
       } else {
         setIsConfigured(false);
-        console.log('❌ 配置不完整:', {
+        logService.warn('❌ 配置不完整', {
           hasAIConfig: !!aiConfig,
           hasAPIKey: !!(aiConfig && aiConfig.apiKey),
           hasChatlogConfig: !!chatlogConfig,
           hasBaseUrl: !!(chatlogConfig && chatlogConfig.baseUrl)
-        });
+        }, 'DailyReport');
       }
     } catch (error) {
-      console.error('❌ 配置检查失败:', error);
+      logService.error('❌ 配置检查失败', { error: error instanceof Error ? error.message : String(error) }, 'DailyReport');
       setIsConfigured(false);
     }
   };
@@ -108,17 +114,18 @@ const DailyReport: React.FC = () => {
   const loadChatrooms = async () => {
     // 只有配置完成后才加载群聊列表
     if (!isConfigured) {
-      console.log('配置未完成，跳过加载群聊列表');
+      logService.info('配置未完成，跳过加载群聊列表', null, 'DailyReport');
       return;
     }
 
     setLoadingChatrooms(true);
+    logService.info('开始加载群聊列表', null, 'DailyReport');
     try {
       const rooms = await chatlogService.getChatrooms();
       setChatrooms(rooms);
-      console.log(`成功加载 ${rooms.length} 个群聊`);
+      logService.info(`成功加载群聊列表`, { count: rooms.length }, 'DailyReport');
     } catch (error) {
-      console.error('获取群聊列表失败:', error);
+      logService.error('获取群聊列表失败', { error: error instanceof Error ? error.message : String(error) }, 'DailyReport');
       message.error('获取群聊列表失败，请检查Chatlog服务是否正常运行');
       setChatrooms([]);
     } finally {
@@ -127,37 +134,37 @@ const DailyReport: React.FC = () => {
   };
 
   const handleGenerateReport = async () => {
-    console.log('🚀 点击生成日报按钮');
-    console.log('📊 当前状态:', {
+    logService.info('🚀 点击生成日报按钮', null, 'DailyReport');
+    logService.info('📊 当前状态', {
       selectedChatroom,
       selectedDate,
       isConfigured,
       chatroomsLength: chatrooms.length
-    });
+    }, 'DailyReport');
 
     if (!selectedChatroom) {
-      console.log('❌ 未选择群聊');
+      logService.warn('❌ 未选择群聊', null, 'DailyReport');
       message.warning('请选择要分析的群聊');
       return;
     }
 
     if (!isConfigured) {
-      console.log('❌ 配置未完成');
+      logService.warn('❌ 配置未完成', null, 'DailyReport');
       message.warning('请先配置AI服务和Chatlog连接');
       setSettingsVisible(true);
       return;
     }
 
-    console.log('✅ 开始生成日报流程');
+    logService.info('✅ 开始生成日报流程', null, 'DailyReport');
     setLoading(true);
     try {
-      console.log('📥 开始获取聊天记录...', { selectedChatroom, selectedDate });
+      logService.info('📥 开始获取聊天记录...', { selectedChatroom, selectedDate }, 'DailyReport');
       // 获取聊天记录
       const messages = await chatlogService.getDailyMessages(selectedChatroom, selectedDate);
-      console.log('📥 获取到聊天记录:', messages.length, '条');
+      logService.info('📥 获取到聊天记录', { messageCount: messages.length }, 'DailyReport');
       
       if (messages.length === 0) {
-        console.log('❌ 该日期没有聊天记录');
+        logService.warn('❌ 该日期没有聊天记录', { selectedChatroom, selectedDate }, 'DailyReport');
         message.warning('该日期没有聊天记录');
         return;
       }
@@ -165,21 +172,21 @@ const DailyReport: React.FC = () => {
       // 获取选中群聊的名称
       const chatroom = chatrooms.find(room => room.name === selectedChatroom);
       const chatName = chatroom?.nickname || chatroom?.nickName || selectedChatroom;
-      console.log('🏷️ 群聊名称:', chatName);
+      logService.info('🏷️ 群聊名称', { chatName }, 'DailyReport');
 
-      console.log('🤖 开始AI生成日报...');
+      logService.info('🤖 开始AI生成日报...', null, 'DailyReport');
       // 生成日报
       const report = await aiService.generateReport(messages, chatName, selectedDate);
-      console.log('✅ 日报生成成功:', report);
+      logService.info('✅ 日报生成成功', { reportGenerated: !!report }, 'DailyReport');
       setGeneratedReport(report);
       
       message.success('日报生成成功！');
     } catch (error) {
-      console.error('❌ 生成日报失败:', error);
+      logService.error('❌ 生成日报失败', { error: error instanceof Error ? error.message : String(error) }, 'DailyReport');
       message.error(`生成日报失败: ${error instanceof Error ? error.message : '未知错误'}`);
     } finally {
       setLoading(false);
-      console.log('🏁 生成日报流程结束');
+      logService.info('🏁 生成日报流程结束', null, 'DailyReport');
     }
   };
 
@@ -209,6 +216,14 @@ const DailyReport: React.FC = () => {
           微信群聊日报生成器
         </Title>
         <Space>
+          <Button 
+            type="text" 
+            icon={<FileTextOutlined />} 
+            onClick={() => setLogViewerVisible(true)}
+            style={{ color: '#fff' }}
+          >
+            查看日志
+          </Button>
           <Button 
             type="text" 
             icon={<WechatOutlined />} 
@@ -396,6 +411,12 @@ const DailyReport: React.FC = () => {
       <ContactModal
         visible={contactVisible}
         onCancel={() => setContactVisible(false)}
+      />
+
+      {/* 日志查看器 */}
+      <LogViewer
+        visible={logViewerVisible}
+        onClose={() => setLogViewerVisible(false)}
       />
     </Layout>
   );

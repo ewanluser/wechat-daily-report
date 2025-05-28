@@ -1,6 +1,8 @@
 import React from 'react';
 import { ConfigProvider, theme } from 'antd';
 import DailyReport from './pages/DailyReport';
+// 导入日志服务以确保在应用启动时初始化
+import './services/logService';
 
 const { darkAlgorithm } = theme;
 
