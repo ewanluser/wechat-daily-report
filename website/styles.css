@@ -620,62 +620,56 @@ p {
 /* macOS Security Notice */
 .macos-security-notice {
     margin-top: 2rem;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-radius: 12px;
     padding: 1.5rem;
-    background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
-    border-radius: var(--radius-lg);
-    border-left: 4px solid var(--warning-color);
+    border: 1px solid rgba(148, 163, 184, 0.1);
 }
 
-.notice-content {
+.macos-security-notice .notice-content {
     display: flex;
-    gap: 1rem;
     align-items: flex-start;
+    gap: 1rem;
 }
 
-.notice-icon {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #2c3e50;
-    font-size: 1.25rem;
+.macos-security-notice .notice-icon {
+    color: #3b82f6;
+    font-size: 1.5rem;
+    margin-top: 0.25rem;
     flex-shrink: 0;
 }
 
-.notice-text h4 {
-    color: #2c3e50;
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
+.macos-security-notice .notice-text h4 {
+    color: #f1f5f9;
+    margin: 0 0 0.75rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
 }
 
-.notice-text p {
-    color: #2c3e50;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
+.macos-security-notice .notice-text p {
+    color: #cbd5e1;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.6;
 }
 
-.notice-text code {
-    background: rgba(0, 0, 0, 0.1);
+.macos-security-notice .notice-text code {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
     font-family: 'Monaco', 'Consolas', monospace;
-    font-size: 0.85rem;
-    color: #2c3e50;
-    display: inline-block;
-    margin: 0.25rem 0;
+    font-size: 0.875rem;
 }
 
-.notice-text a {
-    color: #2c3e50;
-    font-weight: 600;
+.macos-security-notice .notice-text a {
+    color: #60a5fa;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.macos-security-notice .notice-text a:hover {
+    color: #93c5fd;
     text-decoration: underline;
-}
-
-.notice-text a:hover {
-    color: #34495e;
 }
 
 /* Guide Section */
@@ -1093,4 +1087,59 @@ p {
 .mt-4 { margin-top: 1rem; }
 
 .hidden { display: none; }
-.visible { display: block; } 
+.visible { display: block; }
+
+/* 免责声明提示 */
+.disclaimer-notice {
+    margin-top: 2rem;
+    background: linear-gradient(135deg, #451a03 0%, #92400e 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(251, 146, 60, 0.2);
+}
+
+.disclaimer-notice .notice-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.disclaimer-notice .notice-icon {
+    color: #fbbf24;
+    font-size: 1.5rem;
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+}
+
+.disclaimer-notice .notice-text h4 {
+    color: #fef3c7;
+    margin: 0 0 0.75rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.disclaimer-notice .notice-text p {
+    color: #fde68a;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.6;
+}
+
+.disclaimer-notice .notice-text p:last-child {
+    margin-bottom: 0;
+}
+
+.disclaimer-notice .notice-text strong {
+    color: #fef3c7;
+    font-weight: 600;
+}
+
+.disclaimer-notice .notice-text a {
+    color: #fcd34d;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.disclaimer-notice .notice-text a:hover {
+    color: #fbbf24;
+    text-decoration: underline;
+} 

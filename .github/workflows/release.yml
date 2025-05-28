@@ -208,6 +208,10 @@ jobs:
           - 📖 [使用文档](https://github.com/mengjian-github/wechat-daily-report#readme)
           - 🐛 [问题反馈](https://github.com/mengjian-github/wechat-daily-report/issues)
           - 💬 [讨论区](https://github.com/mengjian-github/wechat-daily-report/discussions)
+          - ⚠️ [免责声明](https://github.com/mengjian-github/wechat-daily-report/blob/main/DISCLAIMER.md)
+          
+          ### ⚠️ 重要提醒
+          本工具仅供学习、研究和个人合法使用。请确保您仅处理自己合法拥有的聊天数据，严禁用于未经授权的数据分析。使用前请阅读完整的免责声明。
           
           感谢所有用户的支持！如有问题请通过GitHub Issues反馈。
           EOF
