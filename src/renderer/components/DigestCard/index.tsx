@@ -209,6 +209,40 @@ export const DigestCard: React.FC<DigestCardProps> = ({
               {mostActiveTime}
             </div>
           </motion.div>
+
+          {/* 新增：回复率统计 */}
+          {digest.activityStats.responseRate !== undefined && (
+            <motion.div 
+              className="stat-card"
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            >
+              <div className="stat-card-title">回复率</div>
+              <div className="stat-card-value">
+                <div className="stat-card-icon">
+                  <ThunderboltOutlined />
+                </div>
+                {Math.round(digest.activityStats.responseRate * 100)}%
+              </div>
+            </motion.div>
+          )}
+
+          {/* 新增：多媒体统计 */}
+          {digest.activityStats.mediaStats && (
+            <motion.div 
+              className="stat-card"
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            >
+              <div className="stat-card-title">多媒体内容</div>
+              <div className="stat-card-value">
+                <div className="stat-card-icon">
+                  <FileTextOutlined />
+                </div>
+                {digest.activityStats.mediaStats.imageCount + 
+                 digest.activityStats.mediaStats.linkCount + 
+                 digest.activityStats.mediaStats.documentCount}
+              </div>
+            </motion.div>
+          )}
         </div>
 
         {/* 话题精华 */}
@@ -238,34 +272,198 @@ export const DigestCard: React.FC<DigestCardProps> = ({
                   <div className="topic-title">
                     {getCategoryIcon(topic.category)}
                     {topic.title}
-                    <Tag 
-                      style={{ 
-                        marginLeft: 'auto', 
-                        background: topic.significance === '重要' 
-                          ? 'linear-gradient(135deg, #ff4b1f, #ff9068)' 
-                          : 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))'
-                      }}
-                    >
-                      {topic.significance}
-                    </Tag>
+                    {topic.significance === '高' && (
+                      <Tag 
+                        className="significance-tag-high"
+                        style={{ marginLeft: 'auto' }}
+                      >
+                        🔥 重要
+                      </Tag>
+                    )}
                   </div>
                   <div className="topic-summary">{topic.summary}</div>
+                  {topic.keywordTags && topic.keywordTags.length > 0 && (
+                    <div style={{ margin: '8px 0' }}>
+                      {topic.keywordTags.map((tag, tagIndex) => (
+                        <Tag key={tagIndex} style={{ marginRight: '4px', fontSize: '12px' }}>
+                          {tag}
+                        </Tag>
+                      ))}
+                    </div>
+                  )}
                   <div className="topic-meta">
                     <span><ClockCircleOutlined style={{ marginRight: '6px' }} />{topic.timeRange}</span>
                     <span><UserOutlined style={{ marginRight: '6px' }} />{topic.participants.length}人参与</span>
+                    {topic.sentimentTone && (
+                      <span style={{ 
+                        color: topic.sentimentTone === 'positive' ? '#52c41a' : 
+                               topic.sentimentTone === 'negative' ? '#ff4d4f' : 
+                               topic.sentimentTone === 'mixed' ? '#faad14' : '#999'
+                      }}>
+                        {topic.sentimentTone === 'positive' ? '😊 积极' : 
+                         topic.sentimentTone === 'negative' ? '😔 消极' : 
+                         topic.sentimentTone === 'mixed' ? '🤔 复杂' : '😐 中性'}
+                      </span>
+                    )}
                   </div>
                 </motion.div>
               ))}
             </motion.div>
           )}
           
-          {/* 群友金句 */}
-          {digest.quotableMessages.length > 0 && (
+          {digest.memberContributions && digest.memberContributions.length > 0 && (
+            <motion.div 
+              className="section"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              <div className="section-header">
+                <span className="section-icon">
+                  <TrophyOutlined />
+                </span>
+                <h3 className="section-title">贡献排行</h3>
+              </div>
+              
+              <div className="contributor-grid">
+                {digest.memberContributions.slice(0, 3).map((member, index) => (
+                  <motion.div 
+                    key={index}
+                    className="contributor-card"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.15 + index * 0.1 }}
+                  >
+                    <div className="contributor-rank">#{index + 1}</div>
+                    <div className="contributor-info">
+                      <div className="contributor-name">{member.name}</div>
+                      <div className="contributor-stats">
+                        <span>{member.messageCount}条消息</span>
+                        <span>质量分 {member.qualityScore}/10</span>
+                      </div>
+                      {member.specialties && member.specialties.length > 0 && (
+                        <div className="contributor-specialties">
+                          {member.specialties.slice(0, 2).map((specialty, sIndex) => (
+                            <Tag key={sIndex} style={{ fontSize: '12px' }}>{specialty}</Tag>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {digest.contentValue && (
             <motion.div 
               className="section"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
+            >
+              <div className="section-header">
+                <span className="section-icon">
+                  <FileTextOutlined />
+                </span>
+                <h3 className="section-title">价值内容</h3>
+              </div>
+              
+              {digest.contentValue.knowledgeSharing && digest.contentValue.knowledgeSharing.length > 0 && (
+                <div className="value-section">
+                  <h4 style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '0 0 10px' }}>
+                    💡 知识分享
+                  </h4>
+                  {digest.contentValue.knowledgeSharing.slice(0, 2).map((item, index) => (
+                    <div key={index} className="value-item">
+                      <Tag style={{ marginRight: '8px', fontSize: '12px' }}>{item.type}</Tag>
+                      <span>{item.content}</span>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                        by {item.author} • {item.timestamp}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {digest.contentValue.actionItems && digest.contentValue.actionItems.length > 0 && (
+                <div className="value-section">
+                  <h4 style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '10px 0 10px' }}>
+                    📋 待办事项
+                  </h4>
+                  {digest.contentValue.actionItems.slice(0, 2).map((item, index) => (
+                    <div key={index} className="value-item">
+                      <span>{item.task}</span>
+                      {item.assignee && (
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                          负责人: {item.assignee}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {digest.groupHealth && (
+            <motion.div 
+              className="section"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+            >
+              <div className="section-header">
+                <span className="section-icon">
+                  <RiseOutlined />
+                </span>
+                <h3 className="section-title">群组健康度</h3>
+              </div>
+              
+              <div className="health-score-container">
+                <div className="health-score-main">
+                  <div className="health-score-value">{digest.groupHealth.overallHealthScore}</div>
+                  <div className="health-score-label">综合评分</div>
+                </div>
+                <div className="health-metrics">
+                  <div className="health-metric">
+                    <span>参与平衡</span>
+                    <div className="metric-bar">
+                      <div 
+                        className="metric-fill" 
+                        style={{ width: `${digest.groupHealth.participationBalance * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div className="health-metric">
+                    <span>话题多样性</span>
+                    <div className="metric-bar">
+                      <div 
+                        className="metric-fill" 
+                        style={{ width: `${digest.groupHealth.topicDiversity * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div className="health-metric">
+                    <span>互动质量</span>
+                    <div className="metric-bar">
+                      <div 
+                        className="metric-fill" 
+                        style={{ width: `${digest.groupHealth.interactionQuality * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+          
+          {digest.quotableMessages.length > 0 && (
+            <motion.div 
+              className="section"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
             >
               <div className="section-header">
                 <span className="section-icon">
@@ -280,7 +478,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({
                   className="topic-card"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 + index * 0.1 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
                 >
                   <div className="message-content" style={{ 
                     fontStyle: 'italic', 
@@ -294,6 +492,15 @@ export const DigestCard: React.FC<DigestCardProps> = ({
                   <div className="topic-meta">
                     <span>—— {message.author}</span>
                     <span><ClockCircleOutlined style={{ marginRight: '6px' }} />{message.timestamp}</span>
+                    {message.messageType && (
+                      <Tag style={{ marginLeft: '8px', fontSize: '12px' }}>
+                        {message.messageType === 'insight' ? '💡 洞察' : 
+                         message.messageType === 'humor' ? '😄 幽默' : 
+                         message.messageType === 'decision' ? '⚡ 决策' : 
+                         message.messageType === 'question' ? '❓ 问题' : 
+                         message.messageType === 'solution' ? '✅ 解决' : message.messageType}
+                      </Tag>
+                    )}
                   </div>
                 </motion.div>
               ))}

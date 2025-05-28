@@ -60,6 +60,9 @@ export interface TopicHighlight {
   timeRange: string;
   category: string;
   significance: string;
+  keywordTags?: string[];
+  relatedTopics?: string[];
+  sentimentTone?: 'positive' | 'neutral' | 'negative' | 'mixed';
 }
 
 export interface ActivityStats {
@@ -67,6 +70,14 @@ export interface ActivityStats {
   activeUsers: string[];
   peakTimeRange: string;
   messageDistribution: Record<string, number>;
+  averageMessageLength?: number;
+  responseRate?: number;
+  silentMembers?: string[];
+  mediaStats?: {
+    imageCount: number;
+    linkCount: number;
+    documentCount: number;
+  };
 }
 
 export interface QuotableMessage {
@@ -74,9 +85,48 @@ export interface QuotableMessage {
   author: string;
   timestamp: string;
   context?: string;
+  replyCount?: number;
+  sentimentScore?: number;
+  messageType?: 'insight' | 'humor' | 'decision' | 'question' | 'solution';
 }
 
+export interface MemberContribution {
+  name: string;
+  messageCount: number;
+  qualityScore: number;
+  specialties: string[];
+  responseTime: string;
+  initiatedTopics: number;
+}
 
+export interface ContentValue {
+  knowledgeSharing: Array<{
+    type: '技术分享' | '资源推荐' | '经验总结' | '问题解决';
+    content: string;
+    author: string;
+    timestamp: string;
+  }>;
+  actionItems: Array<{
+    task: string;
+    assignee?: string;
+    deadline?: string;
+    context: string;
+  }>;
+  decisionsMade: Array<{
+    decision: string;
+    context: string;
+    participants: string[];
+    timestamp: string;
+  }>;
+}
+
+export interface GroupHealth {
+  participationBalance: number;
+  topicDiversity: number;
+  interactionQuality: number;
+  overallHealthScore: number;
+  recommendations: string[];
+}
 
 export interface DailyDigest {
   id: string;
@@ -86,6 +136,14 @@ export interface DailyDigest {
   topicHighlights: TopicHighlight[];
   activityStats: ActivityStats;
   quotableMessages: QuotableMessage[];
+  memberContributions?: MemberContribution[];
+  contentValue?: ContentValue;
+  groupHealth?: GroupHealth;
+  trendInsights?: {
+    comparedToPrevious: string;
+    weeklyPattern?: string;
+    seasonalTrends?: string;
+  };
 }
 
 export interface GeneratedReport {

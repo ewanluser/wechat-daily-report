@@ -194,6 +194,14 @@
   margin-bottom: 12px;
 }
 
+/* 新增：重要性标签样式 */
+.significance-tag-high {
+  background: linear-gradient(135deg, #ff4b1f, #ff9068) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(255, 75, 31, 0.3) !important;
+}
+
 .topic-summary {
   color: var(--text-secondary);
   font-size: 14px;
@@ -212,6 +220,149 @@
 .topic-meta span {
   display: flex;
   align-items: center;
+}
+
+/* 新增：贡献者相关样式 */
+.contributor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.contributor-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.contributor-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.contributor-rank {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary-color);
+  min-width: 30px;
+}
+
+.contributor-info {
+  flex: 1;
+}
+
+.contributor-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.contributor-stats {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.contributor-stats span {
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.contributor-specialties {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* 新增：价值内容样式 */
+.value-section {
+  margin-bottom: 20px;
+}
+
+.value-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.value-item:last-child {
+  margin-bottom: 0;
+}
+
+/* 新增：健康度样式 */
+.health-score-container {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.health-score-main {
+  text-align: center;
+  min-width: 100px;
+}
+
+.health-score-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--primary-color);
+  line-height: 1;
+}
+
+.health-score-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.health-metrics {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.health-metric {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.health-metric span {
+  font-size: 14px;
+  color: var(--text-secondary);
+  min-width: 80px;
+}
+
+.metric-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.metric-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  border-radius: 3px;
+  transition: width 0.3s ease;
 }
 
 /* 消息内容样式 */
@@ -269,7 +420,7 @@
 @media (max-width: 768px) {
   .digest-card {
     margin: 10px;
-    max-width: calc(100vw - 20px);
+    max-width: 100%;
   }
   
   .card-header {
@@ -285,7 +436,7 @@
   }
   
   .stat-cards-container {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
   
@@ -293,6 +444,58 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+  }
+  
+  .topic-meta span {
+    font-size: 12px;
+  }
+
+  /* 新增：移动端响应式样式 */
+  .contributor-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .contributor-card {
+    padding: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+  
+  .contributor-rank {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+  
+  .health-score-container {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .health-score-main {
+    align-self: center;
+  }
+  
+  .health-metrics {
+    width: 100%;
+  }
+  
+  .health-metric {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .metric-bar {
+    width: 100%;
+    height: 8px;
+  }
+  
+  .value-item {
+    padding: 10px;
+    font-size: 13px;
   }
 }
 

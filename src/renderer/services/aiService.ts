@@ -174,12 +174,6 @@ class AIService {
           friendlyName = this.generateFriendlyUserName(msg.sender || msg.talker || 'Unknown');
         }
 
-        console.log('🔍 用户信息映射:', {
-          senderName: msg.senderName,
-          sender: msg.sender,
-          talker: msg.talker,
-          finalName: friendlyName
-        });
 
         return {
           sender: friendlyName,
@@ -224,7 +218,10 @@ class AIService {
     console.log('🔍 清理后的群聊名称:', cleanChatName);
 
     // 使用简洁的中文prompt（限制内容数量，适合一图展示）
-    const prompt = `分析微信群聊记录，生成简洁的JSON格式日报（适合一张图片展示）。
+    const userExamples = actualUsers.slice(0, 3).map(u => `"${u}"`).join(', ');
+    const allUsers = actualUsers.map(u => `"${u}"`).join(', ');
+    
+    const prompt = `分析微信群聊记录，生成简洁但信息丰富的JSON格式日报（适合一张图片展示）。
 
 群聊：${cleanChatName}
 日期：${date}
@@ -233,389 +230,203 @@ class AIService {
 聊天记录：
 ${messagesText}
 
-返回以下JSON格式（保持简洁）：
+返回以下JSON格式（保持简洁但信息丰富）：
 
 {
   "topicHighlights": [
     {
       "title": "话题标题（简洁明了）",
       "summary": "话题详细描述（80-120字，包含关键信息和背景）",
-      "participants": ["使用实际的用户名，如：${actualUsers.slice(0, 3).map(u => `"${u}"`).join(', ')}"],
+      "participants": ["使用实际的用户名，如：${userExamples}"],
       "timeRange": "时间段",
-      "category": "技术/学习/工作/生活/其他",
-      "significance": "高|中|低"
+      "category": "技术/学习/工作/生活/决策/讨论/其他",
+      "significance": "高|中|低",
+      "keywordTags": ["关键词1", "关键词2"],
+      "sentimentTone": "positive|neutral|negative|mixed"
     }
   ],
   "activityStats": {
     "totalMessages": ${messages.length},
-    "activeUsers": ["必须使用实际用户名: ${actualUsers.map(u => `"${u}"`).join(', ')}"],
-    "messageDistribution": {"morning": 0, "afternoon": 0, "evening": 0, "night": 0}
+    "activeUsers": ["必须使用实际用户名: ${allUsers}"],
+    "messageDistribution": {"morning": 0, "afternoon": 0, "evening": 0, "night": 0},
+    "averageMessageLength": 0,
+    "responseRate": 0.0,
+    "silentMembers": ["较少发言的用户"],
+    "mediaStats": {
+      "imageCount": 0,
+      "linkCount": 0,
+      "documentCount": 0
+    }
   },
   "quotableMessages": [
     {
       "content": "精彩发言（简洁有价值）",
       "author": "必须使用实际的发送者用户名",
-      "timestamp": "时间"
+      "timestamp": "时间",
+      "messageType": "insight|humor|decision|question|solution",
+      "sentimentScore": 0.5
     }
-  ]
+  ],
+  "memberContributions": [
+    {
+      "name": "用户名",
+      "messageCount": 0,
+      "qualityScore": 8,
+      "specialties": ["技术", "产品"],
+      "responseTime": "快速|正常|较慢",
+      "initiatedTopics": 0
+    }
+  ],
+  "contentValue": {
+    "knowledgeSharing": [
+      {
+        "type": "技术分享|资源推荐|经验总结|问题解决",
+        "content": "分享内容摘要",
+        "author": "分享者",
+        "timestamp": "时间"
+      }
+    ],
+    "actionItems": [
+      {
+        "task": "待办事项描述",
+        "assignee": "负责人（如有）",
+        "context": "上下文"
+      }
+    ],
+    "decisionsMade": [
+      {
+        "decision": "决策内容",
+        "context": "决策背景",
+        "participants": ["参与决策的用户"],
+        "timestamp": "时间"
+      }
+    ]
+  },
+  "groupHealth": {
+    "participationBalance": 0.8,
+    "topicDiversity": 0.7,
+    "interactionQuality": 0.9,
+    "overallHealthScore": 85,
+    "recommendations": ["改进建议1", "改进建议2"]
+  },
+  "trendInsights": {
+    "comparedToPrevious": "与往常相比的变化描述"
+  }
 }
 
 重要要求：
 1. topicHighlights 最多2-3个重要话题，但每个话题要有足够信息量
 2. quotableMessages 最多2-3句精彩发言，选择最有价值的
-3. summary 要详细描述（80-120字），包含关键信息、背景和影响
-4. 必须使用聊天记录中的实际用户名
-5. 返回完整有效的JSON，不要markdown标记
-6. 图片展示要简洁，但内容要有实质性信息`;
+3. memberContributions 展示前3-5名活跃贡献者
+4. 所有数值字段要基于实际聊天内容进行合理估算
+5. 必须使用聊天记录中的实际用户名
+6. 返回完整有效的JSON，不要markdown标记
+7. 新增字段要提供有价值的洞察，不是简单罗列
+8. 重要性级别说明：
+   - "高"：影响决策、解决重要问题、涉及多人的关键讨论
+   - "中"：有价值的技术分享、经验交流、一般性讨论
+   - "低"：日常闲聊、简单问答、个人感想
 
-    let response;
+JSON格式严格要求：
+- 必须返回完整的JSON对象，以{开始，以}结束
+- 不要在JSON前后添加任何文字说明
+- 不要使用\`\`\`json\`\`\`标记包裹
+- 所有字符串值必须用双引号包围
+- 字符串内容中的双引号必须转义为\\"
+- 数组和对象的最后一个元素后不要加逗号
+- 确保所有括号、中括号、大括号都正确闭合
+- 返回的内容必须能直接通过JSON.parse()解析`;
+
     try {
       console.log('🔍 开始调用AI API...');
-      console.log('🔍 API配置:', {
-        model: this.config!.model,
-        provider: this.config!.provider,
-        baseURL: this.client!.baseURL
-      });
       
-      // 使用实际的聊天分析prompt
-      response = await this.client!.chat.completions.create({
+      const response = await this.client!.chat.completions.create({
         model: this.config!.model,
         messages: [
           {
             role: 'system',
-            content: '你是一个专业的微信群聊分析助手，擅长从聊天记录中提炼最有价值的信息。请选择最重要的2-3个话题，但要确保每个话题都有足够的信息量和价值。话题描述要详细具体，包含关键背景和影响。必须用中文输出标准JSON格式，不要包含任何markdown标记。'
+            content: '你是一个JSON数据分析助手。请严格按照要求返回JSON格式，不要包含任何markdown标记或其他文字。'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.3,
-        max_tokens: 6000  // 增加token限制以避免截断
+        temperature: 0.1,
+        max_tokens: 4000
       });
       console.log('🔍 AI API调用成功');
-    } catch (apiError) {
-      console.error('🔍 AI API调用失败:', apiError);
-      console.error('🔍 API错误详情:', {
-        message: apiError instanceof Error ? apiError.message : 'Unknown error',
-        name: apiError instanceof Error ? apiError.name : 'Unknown',
-        stack: apiError instanceof Error ? apiError.stack : 'No stack'
-      });
-      throw apiError;
-    }
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('AI返回内容为空');
-    }
-
-    console.log('🔍 AI返回的原始内容:', content);
-    console.log('🔍 AI返回内容长度:', content.length);
-    console.log('🔍 AI返回内容前50字符:', content.substring(0, 50));
-    
-    // 检测是否被截断并处理
-    let actualContent = content;
-    const finishReason = response.choices[0]?.finish_reason;
-    console.log('🔍 AI返回完成原因:', finishReason);
-    
-    if (finishReason === 'length') {
-      console.warn('⚠️ AI返回内容可能被截断，finish_reason为length');
-      
-      // 如果被截断，尝试用更高的token限制重新请求
-      try {
-        console.log('🔍 检测到截断，使用更高token限制重试...');
-        const retryResponse = await this.client!.chat.completions.create({
-          model: this.config!.model,
-          messages: [
-            {
-              role: 'system',
-              content: '你是一个专业的微信群聊分析助手。请输出简洁但完整的JSON格式日报，确保JSON结构完整有效。优先保证JSON的完整性，可以适当简化内容描述。'
-            },
-            {
-              role: 'user',
-              content: prompt.replace('至少100字的详细描述', '50-80字的简洁描述').replace('详细说明需要跟进什么、为什么需要跟进、预期结果等。包含足够的上下文信息。', '简洁说明跟进事项和预期结果。')
-            }
-          ],
-          temperature: 0.3,
-          max_tokens: 8000  // 进一步增加token限制
-        });
-        
-        const retryContent = retryResponse.choices[0]?.message?.content;
-        if (retryContent && retryResponse.choices[0]?.finish_reason !== 'length') {
-          console.log('🔍 重试成功，使用重试结果');
-          console.log('🔍 重试内容长度:', retryContent.length);
-          actualContent = retryContent;  // 使用重试的结果
-          console.log('🔍 重试返回的原始内容:', actualContent);
-        } else {
-          console.log('🔍 重试仍被截断或失败，使用原始内容');
-        }
-      } catch (retryError) {
-        console.error('🔍 重试失败，继续使用原始内容:', retryError);
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('AI返回内容为空');
       }
-    }
 
-    // 改进的JSON解析逻辑
-    let cleanContent = actualContent.trim();
-    
-    // 1. 首先移除markdown标记
-    cleanContent = cleanContent.replace(/```json\s*/g, '').replace(/```\s*/g, '');
-    
-    // 2. 查找JSON部分（从第一个 { 到最后一个 }）
-    const firstBrace = cleanContent.indexOf('{');
-    const lastBrace = cleanContent.lastIndexOf('}');
-    
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      cleanContent = cleanContent.substring(firstBrace, lastBrace + 1);
-      console.log('🔍 提取的JSON内容:', cleanContent);
-    }
+      console.log('🔍 AI返回的原始内容:', content);
 
-    // 3. 使用增强的清理方法
-    let sanitizedContent = cleanContent;
-    
-    try {
+      // 简单的JSON提取和解析
+      let jsonStr = content.trim();
       
-      // 替换可能导致问题的引号字符
-      sanitizedContent = sanitizedContent
-        .replace(/[\u201c\u201d]/g, '"') // 替换中文双引号为标准双引号
-        .replace(/[\u2018\u2019]/g, "'") // 替换中文单引号为标准单引号
-        .replace(/"/g, '"') // 替换全角引号
-        .replace(/'/g, "'") // 替换全角单引号
-        .trim();
+      // 移除可能的markdown标记
+      jsonStr = jsonStr.replace(/```json\s*/g, '').replace(/```\s*/g, '');
       
-      // 4. 修复常见的JSON格式错误
-      // 处理可能的不完整数组或对象
-      if (!sanitizedContent.endsWith('}')) {
-        // 如果JSON不完整，尝试找到最后一个完整的对象或数组
-        const stack: string[] = [];
-        let lastValidPos = 0;
-        
-        for (let i = 0; i < sanitizedContent.length; i++) {
-          const char = sanitizedContent[i];
-          if (char === '{' || char === '[') {
-            stack.push(char);
-          } else if (char === '}' || char === ']') {
-            const expected = char === '}' ? '{' : '[';
-            if (stack.length > 0 && stack[stack.length - 1] === expected) {
-              stack.pop();
-              if (stack.length === 0) {
-                lastValidPos = i + 1;
-              }
-            }
-          }
-        }
-        
-        if (lastValidPos > 0) {
-          sanitizedContent = sanitizedContent.substring(0, lastValidPos);
-          console.log('🔍 修复后的JSON内容:', sanitizedContent);
-        }
+      // 查找JSON部分
+      const startIndex = jsonStr.indexOf('{');
+      const endIndex = jsonStr.lastIndexOf('}');
+      
+      if (startIndex !== -1 && endIndex !== -1) {
+        jsonStr = jsonStr.substring(startIndex, endIndex + 1);
       }
-      
-      // 5. 处理可能的尾随逗号问题
-      sanitizedContent = sanitizedContent
-        .replace(/,(\s*[}\]])/g, '$1') // 移除对象和数组末尾的逗号
-        .replace(/,(\s*,)/g, ','); // 移除重复的逗号
-      
-      // 6. 处理字符串中的引号问题（这是最常见的错误源）
-      // 查找并修复字符串值中的未转义引号
-      try {
-        // 尝试逐步修复常见的引号问题
-        sanitizedContent = sanitizedContent
-          // 修复字符串中的直接双引号（如 "说"这样"的内容" -> "说\"这样\"的内容"）
-          .replace(/"([^"]*)"([^"]*)"([^"]*)"(\s*[,}\]])/g, '"$1\\"$2\\"$3"$4')
-          // 修复可能的三重引号问题
-          .replace(/"""([^"]*)"""/g, '"$1"')
-          // 修复字符串末尾的引号问题
-          .replace(/([^\\])"([^",}\]\s])/g, '$1\\"$2');
-        
-        console.log('🔍 引号修复后内容前500字符:', sanitizedContent.substring(0, 500));
-      } catch (quoteError) {
-        console.warn('🔍 引号修复失败，继续使用原内容:', quoteError);
-      }
-      
-      console.log('🔍 JSON清理后内容前500字符:', sanitizedContent.substring(0, 500));
-      
-      const result = JSON.parse(sanitizedContent);
+
+      console.log('🔍 准备解析的JSON:', jsonStr);
+
+      // 直接解析JSON
+      const result = JSON.parse(jsonStr);
       console.log('🔍 JSON解析成功:', result);
-      
-      // 构建完整的DailyDigest对象，确保使用实际用户数据
-      const digest = {
+
+      // 构建完整的DailyDigest对象
+      const digest: DailyDigest = {
         id: `digest-${date}`,
         chatGroupId: chatName,
         chatGroupName: chatName,
         date,
-        topicHighlights: (result.topicHighlights || []).map((topic: any) => ({
-          ...topic,
-          // 如果AI返回的participants是通用描述，替换为实际用户
-          participants: topic.participants?.some((p: string) => p.includes('群成员') || p.includes('用户')) 
-            ? actualUsers 
-            : topic.participants?.filter((p: string) => actualUsers.includes(p)) || actualUsers
-        })),
+        topicHighlights: result.topicHighlights || [],
         activityStats: {
           totalMessages: messages.length,
-          activeUsers: actualUsers,  // 强制使用实际用户列表
+          activeUsers: actualUsers,
           peakTimeRange: this.calculatePeakTime(messages),
-          messageDistribution: this.calculateTimeDistribution(messages),
-          // 不使用AI返回的activeUsers，因为可能不准确
+          messageDistribution: this.calculateTimeDistribution(messages)
         },
-        quotableMessages: (result.quotableMessages || []).map((msg: any) => ({
-          ...msg,
-          // 确保author是实际用户名
-          author: actualUsers.find(user => msg.author?.includes(user)) || msg.author
-        }))
+        quotableMessages: result.quotableMessages || []
       };
-      
-      console.log('🔍 构建的digest对象中的activeUsers:', digest.activityStats.activeUsers);
+
       return digest;
-    } catch (parseError) {
-      console.error('🔍 JSON解析失败:', parseError);
-      console.error('🔍 尝试解析的内容:', cleanContent);
-      console.error('🔍 解析错误位置:', parseError instanceof SyntaxError ? parseError.message : '未知错误');
+
+    } catch (error) {
+      console.error('❌ JSON解析失败:', error);
       
-      // 7. 基于错误位置的精确修复
-      if (parseError instanceof SyntaxError && parseError.message.includes('position')) {
-        const positionMatch = parseError.message.match(/position (\d+)/);
-        if (positionMatch) {
-          const errorPosition = parseInt(positionMatch[1]);
-          console.log('🔍 尝试基于错误位置修复JSON...');
-          
-          try {
-            let positionFixedContent = sanitizedContent;
-            
-            // 获取错误位置周围的内容
-            const start = Math.max(0, errorPosition - 50);
-            const end = Math.min(sanitizedContent.length, errorPosition + 50);
-            const errorContext = sanitizedContent.substring(start, end);
-            console.log('🔍 错误位置上下文:', errorContext);
-            
-            // 检查错误位置附近是否有引号问题
-            const errorChar = sanitizedContent[errorPosition];
-            const prevChar = sanitizedContent[errorPosition - 1];
-            const nextChar = sanitizedContent[errorPosition + 1];
-            
-            console.log('🔍 错误字符:', { errorChar, prevChar, nextChar });
-            
-            // 尝试修复常见的问题
-            if (errorChar === '"' && prevChar !== '\\' && prevChar !== ',' && prevChar !== ':' && prevChar !== '[') {
-              // 可能是字符串中的未转义引号
-              positionFixedContent = sanitizedContent.substring(0, errorPosition) + '\\"' + sanitizedContent.substring(errorPosition + 1);
-              console.log('🔍 尝试转义引号修复');
-            } else if (errorChar === '"' && nextChar && nextChar !== ',' && nextChar !== '}' && nextChar !== ']' && nextChar !== '\n' && nextChar !== ' ') {
-              // 可能是字符串结束引号后缺少逗号
-              positionFixedContent = sanitizedContent.substring(0, errorPosition + 1) + ',' + sanitizedContent.substring(errorPosition + 1);
-              console.log('🔍 尝试添加逗号修复');
-            }
-            
-            const result = JSON.parse(positionFixedContent);
-            console.log('🔍 基于位置的JSON修复成功!', result);
-            
-            // 应用相同的用户数据修复逻辑
-            const digest = {
-              id: `digest-${date}`,
-              chatGroupId: chatName,
-              chatGroupName: chatName,
-              date,
-              topicHighlights: (result.topicHighlights || []).map((topic: any) => ({
-                ...topic,
-                participants: topic.participants?.some((p: string) => p.includes('群成员') || p.includes('用户')) 
-                  ? actualUsers 
-                  : topic.participants?.filter((p: string) => actualUsers.includes(p)) || actualUsers
-              })),
-              activityStats: {
-                totalMessages: messages.length,
-                activeUsers: actualUsers,
-                peakTimeRange: this.calculatePeakTime(messages),
-                messageDistribution: this.calculateTimeDistribution(messages),
-              },
-              quotableMessages: (result.quotableMessages || []).map((msg: any) => ({
-                ...msg,
-                author: actualUsers.find(user => msg.author?.includes(user)) || msg.author
-              }))
-            };
-            return digest;
-          } catch (positionError) {
-            console.error('🔍 基于位置的修复也失败:', positionError);
-          }
-        }
-      }
-      
-      // 6. 如果仍然失败，尝试一种更激进的修复方式
-      try {
-        console.log('🔍 尝试激进修复JSON...');
-        let aggressiveContent = cleanContent;
-        
-        // 找到可能不完整的部分并尝试修复
-        // 检查是否存在未闭合的数组或对象
-        const openBraces = (aggressiveContent.match(/\{/g) || []).length;
-        const closeBraces = (aggressiveContent.match(/\}/g) || []).length;
-        const openBrackets = (aggressiveContent.match(/\[/g) || []).length;
-        const closeBrackets = (aggressiveContent.match(/\]/g) || []).length;
-        
-        // 补充缺失的闭合符号
-        if (openBraces > closeBraces) {
-          aggressiveContent += '}'.repeat(openBraces - closeBraces);
-        }
-        if (openBrackets > closeBrackets) {
-          aggressiveContent += ']'.repeat(openBrackets - closeBrackets);
-        }
-        
-        console.log('🔍 激进修复后的内容:', aggressiveContent);
-        const result = JSON.parse(aggressiveContent);
-        console.log('🔍 激进修复JSON解析成功:', result);
-        
-        // 应用相同的用户数据修复逻辑  
-        const digest = {
-          id: `digest-${date}`,
-          chatGroupId: chatName,
-          chatGroupName: chatName,
-          date,
-          topicHighlights: (result.topicHighlights || []).map((topic: any) => ({
-            ...topic,
-            participants: topic.participants?.some((p: string) => p.includes('群成员') || p.includes('用户')) 
-              ? actualUsers 
-              : topic.participants?.filter((p: string) => actualUsers.includes(p)) || actualUsers
-          })),
-          activityStats: {
-            totalMessages: messages.length,
-            activeUsers: actualUsers,
-            peakTimeRange: this.calculatePeakTime(messages),
-            messageDistribution: this.calculateTimeDistribution(messages),
-          },
-          quotableMessages: (result.quotableMessages || []).map((msg: any) => ({
-            ...msg,
-            author: actualUsers.find(user => msg.author?.includes(user)) || msg.author
-          }))
-        };
-        return digest;
-      } catch (aggressiveError) {
-        console.error('🔍 激进修复也失败:', aggressiveError);
-        
-        // 如果所有解析尝试都失败，返回一个基本的结构
-        const errorMessage = finishReason === 'length' 
-          ? 'AI返回内容被截断，建议增加模型的token限制或简化聊天记录内容。' 
-          : 'AI返回的数据格式无法解析，可能是由于聊天内容过于复杂或API返回格式异常。';
-          
-        return {
-          id: `digest-${date}`,
-          chatGroupId: chatName,
-          chatGroupName: chatName,
-          date,
-          topicHighlights: [{
-            title: finishReason === 'length' ? '内容被截断' : '数据解析失败',
-            summary: `${errorMessage}建议检查API配置或重新尝试生成。原始AI返回内容已记录在日志中供调试使用。当前finish_reason: ${finishReason}`,
-            participants: actualUsers,
-            timeRange: '全天',
-            category: '错误',
-            significance: 'low'
-          }],
-          activityStats: {
-            totalMessages: messages.length,
-            activeUsers: actualUsers,
-            peakTimeRange: this.calculatePeakTime(messages),
-            messageDistribution: this.calculateTimeDistribution(messages)
-          },
-          quotableMessages: []
-        };
-      }
+      // 如果解析失败，返回基本结构
+      return {
+        id: `digest-${date}`,
+        chatGroupId: chatName,
+        chatGroupName: chatName,
+        date,
+        topicHighlights: [{
+          title: '解析失败',
+          summary: `AI返回数据解析失败: ${error instanceof Error ? error.message : '未知错误'}`,
+          participants: actualUsers,
+          timeRange: '全天',
+          category: '错误',
+          significance: 'low'
+        }],
+        activityStats: {
+          totalMessages: messages.length,
+          activeUsers: actualUsers,
+          peakTimeRange: this.calculatePeakTime(messages),
+          messageDistribution: this.calculateTimeDistribution(messages)
+        },
+        quotableMessages: []
+      };
     }
   }
 

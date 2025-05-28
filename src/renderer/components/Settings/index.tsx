@@ -217,9 +217,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 label="模型"
                 name="model"
                 rules={[{ required: true, message: '请输入模型名称' }]}
-                initialValue="anthropic/claude-3.7-sonnet"
+                initialValue="openai/gpt-4o-mini"
               >
-                <Input placeholder="例如: anthropic/claude-3.7-sonnet, gpt-4o-mini" />
+                <Input placeholder="例如: openai/gpt-4o-mini" />
               </Form.Item>
 
               <Form.Item

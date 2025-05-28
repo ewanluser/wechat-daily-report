@@ -43,7 +43,7 @@
 - **API 提供商**：[OpenRouter](https://openrouter.ai/) (推荐) 或 OpenAI
 - **OpenRouter 优势**：统一接口访问 300+ 模型，更好的价格和可用性，无需订阅
 - **API 密钥**：从 [OpenRouter](https://openrouter.ai/) 或 OpenAI 平台获取
-- **模型选择**：默认 `anthropic/claude-3.7-sonnet`，支持 GPT-4、Gemini 等多种模型
+- **模型选择**：默认 `openai/gpt-4o-mini`，支持 GPT-4、Gemini 等多种模型
 
 #### Chatlog 服务配置
 - **Chatlog 项目**：[sjzar/chatlog](https://github.com/sjzar/chatlog) - 聊天记录工具，轻松使用自己的聊天数据
