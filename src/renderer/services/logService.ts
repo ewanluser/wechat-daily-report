@@ -47,11 +47,36 @@ class LogService {
   // 根据关键词搜索日志
   searchLogs(keyword: string): LogEntry[] {
     const lowerKeyword = keyword.toLowerCase();
-    return this.logs.filter(log => 
-      log.message.toLowerCase().includes(lowerKeyword) ||
-      (log.source && log.source.toLowerCase().includes(lowerKeyword)) ||
-      (log.details && JSON.stringify(log.details).toLowerCase().includes(lowerKeyword))
-    );
+    return this.logs.filter(log => {
+      // 搜索消息内容
+      if (log.message.toLowerCase().includes(lowerKeyword)) {
+        return true;
+      }
+      
+      // 搜索来源
+      if (log.source && log.source.toLowerCase().includes(lowerKeyword)) {
+        return true;
+      }
+      
+      // 搜索详细信息
+      if (log.details) {
+        try {
+          const detailsString = typeof log.details === 'string' 
+            ? log.details 
+            : JSON.stringify(log.details);
+          if (detailsString.toLowerCase().includes(lowerKeyword)) {
+            return true;
+          }
+        } catch (e) {
+          // 如果JSON.stringify失败，转换为字符串再搜索
+          if (String(log.details).toLowerCase().includes(lowerKeyword)) {
+            return true;
+          }
+        }
+      }
+      
+      return false;
+    });
   }
 
   // 清空日志
@@ -111,22 +136,40 @@ const originalConsole = {
   info: console.info
 };
 
+// 格式化参数的辅助函数
+const formatArgs = (args: any[]) => {
+  return args.map(arg => {
+    if (typeof arg === 'object' && arg !== null) {
+      try {
+        return JSON.stringify(arg, null, 2);
+      } catch (e) {
+        return String(arg);
+      }
+    }
+    return String(arg);
+  }).join(' ');
+};
+
 console.log = (...args) => {
   originalConsole.log(...args);
-  logService.info(args.join(' '), args.length > 1 ? args : undefined, 'console');
+  const message = formatArgs(args);
+  logService.info(message, args.length > 1 ? args : (args.length === 1 && typeof args[0] === 'object' ? args[0] : undefined), 'console');
 };
 
 console.warn = (...args) => {
   originalConsole.warn(...args);
-  logService.warn(args.join(' '), args.length > 1 ? args : undefined, 'console');
+  const message = formatArgs(args);
+  logService.warn(message, args.length > 1 ? args : (args.length === 1 && typeof args[0] === 'object' ? args[0] : undefined), 'console');
 };
 
 console.error = (...args) => {
   originalConsole.error(...args);
-  logService.error(args.join(' '), args.length > 1 ? args : undefined, 'console');
+  const message = formatArgs(args);
+  logService.error(message, args.length > 1 ? args : (args.length === 1 && typeof args[0] === 'object' ? args[0] : undefined), 'console');
 };
 
 console.info = (...args) => {
   originalConsole.info(...args);
-  logService.info(args.join(' '), args.length > 1 ? args : undefined, 'console');
+  const message = formatArgs(args);
+  logService.info(message, args.length > 1 ? args : (args.length === 1 && typeof args[0] === 'object' ? args[0] : undefined), 'console');
 }; 

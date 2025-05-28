@@ -380,7 +380,19 @@ export const LogViewer: React.FC<LogViewerProps> = ({ visible, onClose }) => {
             
             <Card title="消息内容" size="small" style={{ marginBottom: 16 }}>
               <Paragraph>
-                <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                <pre style={{ 
+                  whiteSpace: 'pre-wrap', 
+                  wordBreak: 'break-word',
+                  background: '#1f1f1f',
+                  color: '#ffffff',
+                  padding: '12px',
+                  borderRadius: '4px',
+                  fontSize: '13px',
+                  border: '1px solid #434343',
+                  maxHeight: '300px',
+                  overflow: 'auto',
+                  margin: 0
+                }}>
                   {selectedLog.message}
                 </pre>
               </Paragraph>
@@ -392,10 +404,14 @@ export const LogViewer: React.FC<LogViewerProps> = ({ visible, onClose }) => {
                   <pre style={{ 
                     whiteSpace: 'pre-wrap', 
                     wordBreak: 'break-word',
-                    background: '#f5f5f5',
+                    background: '#1f1f1f',
+                    color: '#ffffff',
                     padding: '12px',
                     borderRadius: '4px',
-                    fontSize: '12px'
+                    fontSize: '12px',
+                    border: '1px solid #434343',
+                    maxHeight: '400px',
+                    overflow: 'auto'
                   }}>
                     {JSON.stringify(selectedLog.details, null, 2)}
                   </pre>
