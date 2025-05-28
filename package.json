@@ -94,6 +94,7 @@
     "cross-env": "^7.0.3",
     "css-loader": "^6.8.1",
     "dayjs": "^1.11.13",
+    "dmg-license": "^1.0.11",
     "electron": "^32.1.0",
     "electron-builder": "^25.1.8",
     "html-webpack-plugin": "^5.5.3",
