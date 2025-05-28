@@ -1,4 +1,4 @@
-// DOM Elements
+ // DOM Elements
 const hamburger = document.getElementById('hamburger');
 const navMenu = document.getElementById('navMenu');
 const navbar = document.querySelector('.navbar');
