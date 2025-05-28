@@ -188,8 +188,8 @@ jobs:
       - name: 创建GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.check-changes.outputs.new-version }}
-          name: "微信群聊日报生成器 ${{ needs.check-changes.outputs.new-version }}"
+          tag_name: v${{ needs.check-changes.outputs.new-version }}
+          name: "微信群聊日报生成器 v${{ needs.check-changes.outputs.new-version }}"
           body_path: release_notes.md
           files: |
             release/*.dmg
@@ -219,11 +219,7 @@ jobs:
       - name: 更新官网下载链接
         run: |
           cd website
-          VERSION="${{ needs.check-changes.outputs.new-version }}"
-          # 确保版本号格式正确（添加 v 前缀用于 GitHub release tag）
-          if [[ ! "$VERSION" =~ ^v ]]; then
-            VERSION="v$VERSION"
-          fi
+          VERSION="v${{ needs.check-changes.outputs.new-version }}"
           REPO="mengjian-github/wechat-daily-report"
           
           echo "使用版本号: $VERSION"
