@@ -256,11 +256,3 @@ jobs:
             git commit -m "🔄 自动更新官网下载链接到 ${{ needs.check-changes.outputs.new-version }}"
             git push
           fi
-
-      - name: 部署官网 (如果使用GitHub Pages)
-        run: |
-          cd website
-          if [ -f "deploy.sh" ]; then
-            chmod +x deploy.sh
-            ./deploy.sh --github-pages || echo "官网部署脚本执行完成"
-          fi 
