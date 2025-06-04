@@ -124,7 +124,8 @@ export const DigestCard: React.FC<DigestCardProps> = ({
       setExporting(false);
 
       const link = document.createElement('a');
-      link.download = `${digest.chatGroupName}-群聊日报-${digest.date}-微信群聊日报生成器.png`;
+      const reportType = digest.chatType === 'private' ? '私聊日报' : '群聊日报';
+      link.download = `${digest.chatGroupName}-${reportType}-${digest.date}-微信聊天日报生成器.png`;
       link.href = canvas.toDataURL();
       link.click();
     }
@@ -162,7 +163,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({
           <h2 className="card-header-title">{digest.chatGroupName}</h2>
           <div className="card-header-subtitle">
             <ClockCircleOutlined style={{ marginRight: '8px' }} />
-            {digest.date} 群聊日报
+            {digest.date} {digest.chatType === 'private' ? '私聊日报' : '群聊日报'}
           </div>
           <div className="avatar-group" style={{ marginTop: '20px' }}>
             {digest.activityStats.activeUsers.slice(0, 5).map((user: string, index: number) => (
@@ -190,7 +191,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({
       </div>
 
       <div className="card-body">
-        {/* 群聊统计 */}
+        {/* 聊天统计 */}
         <div className="stat-cards-container">
           <motion.div 
             className="stat-card"
@@ -209,7 +210,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({
             className="stat-card"
             whileHover={{ y: -5, transition: { duration: 0.2 } }}
           >
-            <div className="stat-card-title">活跃成员</div>
+            <div className="stat-card-title">{digest.chatType === 'private' ? '对话双方' : '活跃成员'}</div>
             <div className="stat-card-value">
               <div className="stat-card-icon">
                 <UserOutlined />
@@ -438,7 +439,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({
                 <span className="section-icon">
                   <RiseOutlined />
                 </span>
-                <h3 className="section-title">群组健康度</h3>
+                <h3 className="section-title">{digest.chatType === 'private' ? '对话分析' : '群组健康度'}</h3>
               </div>
               
               <div className="health-score-container">
@@ -490,7 +491,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({
                 <span className="section-icon">
                   <StarOutlined />
                 </span>
-                <h3 className="section-title">群友金句</h3>
+                <h3 className="section-title">{digest.chatType === 'private' ? '精彩对话' : '群友金句'}</h3>
               </div>
               
               {digest.quotableMessages.slice(0, 3).map((message, index) => (
@@ -525,6 +526,108 @@ export const DigestCard: React.FC<DigestCardProps> = ({
                   </div>
                 </motion.div>
               ))}
+            </motion.div>
+          )}
+
+          {/* 私聊专属分析 */}
+          {digest.chatType === 'private' && digest.privateAnalysis && (
+            <motion.div 
+              className="section"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+            >
+              <div className="section-header">
+                <span className="section-icon">
+                  <UserOutlined />
+                </span>
+                <h3 className="section-title">关系洞察</h3>
+              </div>
+              
+              <div className="private-analysis-container">
+                {/* 对话氛围圆环显示 */}
+                {digest.privateAnalysis.relationshipTone && (
+                  <div className="relationship-tone-card">
+                    <div className="tone-circle-container">
+                      <div className={`tone-circle ${digest.privateAnalysis.relationshipTone}`}>
+                        <div className="tone-icon">
+                          {digest.privateAnalysis.relationshipTone === 'friendly' ? '😊' :
+                           digest.privateAnalysis.relationshipTone === 'professional' ? '💼' :
+                           digest.privateAnalysis.relationshipTone === 'intimate' ? '💕' : '😐'}
+                        </div>
+                      </div>
+                      <div className="tone-label">
+                        <div className="tone-title">对话氛围</div>
+                        <div className="tone-desc">
+                          {digest.privateAnalysis.relationshipTone === 'friendly' ? '友好轻松' :
+                           digest.privateAnalysis.relationshipTone === 'professional' ? '专业正式' :
+                           digest.privateAnalysis.relationshipTone === 'intimate' ? '亲密温馨' : '中性平和'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* 沟通风格雷达图风格 */}
+                {digest.privateAnalysis.communicationStyle && (
+                  <div className="communication-style-card">
+                    <div className="style-header">
+                      <div className="style-icon">🗣️</div>
+                      <div className="style-title">沟通风格</div>
+                    </div>
+                    <div className="style-content">
+                      {digest.privateAnalysis.communicationStyle}
+                    </div>
+                  </div>
+                )}
+
+                {/* 对话模式标签云 */}
+                {digest.privateAnalysis.conversationPatterns && digest.privateAnalysis.conversationPatterns.length > 0 && (
+                  <div className="conversation-patterns-card">
+                    <div className="patterns-header">
+                      <div className="patterns-icon">🔄</div>
+                      <div className="patterns-title">对话模式</div>
+                    </div>
+                    <div className="patterns-cloud">
+                      {digest.privateAnalysis.conversationPatterns.map((pattern, index) => (
+                        <motion.div
+                          key={index}
+                          className="pattern-tag"
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          {pattern}
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 情感洞察时间线 */}
+                {digest.privateAnalysis.emotionalInsights && digest.privateAnalysis.emotionalInsights.length > 0 && (
+                  <div className="emotional-insights-card">
+                    <div className="insights-header">
+                      <div className="insights-icon">💡</div>
+                      <div className="insights-title">情感洞察</div>
+                    </div>
+                    <div className="insights-timeline">
+                      {digest.privateAnalysis.emotionalInsights.map((insight, index) => (
+                        <motion.div
+                          key={index}
+                          className="insight-item"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.15 }}
+                        >
+                          <div className="insight-dot"></div>
+                          <div className="insight-content">{insight}</div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
 
@@ -572,7 +675,7 @@ export const DigestCard: React.FC<DigestCardProps> = ({
         <div className={`product-watermark ${exporting ? 'exporting' : ''}`}>
           <div className="watermark-content">
             <div className="watermark-left">
-              <div className="product-name">微信群聊日报生成器</div>
+              <div className="product-name">微信聊天日报生成器</div>
               <div className="product-tagline">AI智能分析 · 精美日报生成</div>
               <div className="product-links">
                 <span className="product-link">🌐 www.wechatdaily.online</span>
@@ -582,9 +685,9 @@ export const DigestCard: React.FC<DigestCardProps> = ({
             <div className="watermark-right">
               <div className="brand-logo">
                 <div className="logo-circle">
-                  <span className="logo-text">群日报</span>
+                  <span className="logo-text">日报</span>
                 </div>
-                <div className="brand-subtitle">让群聊更有价值</div>
+                                  <div className="brand-subtitle">让聊天更有价值</div>
               </div>
             </div>
           </div>

@@ -40,11 +40,20 @@ class AIService {
     return this.client !== null && this.config !== null;
   }
 
+  // 判断是否为个人聊天
+  private isPrivateChat(messages: ChatlogMessage[]): boolean {
+    // 分析消息发送者，如果只有2个不同的发送者，很可能是个人聊天
+    const senders = new Set(messages.map(msg => msg.sender || msg.talker || 'unknown'));
+    console.log('🔍 发送者分析:', { totalSenders: senders.size, senders: Array.from(senders) });
+    return senders.size <= 2;
+  }
+
   // 生成日报
   async generateReport(
     messages: ChatlogMessage[], 
     chatName: string, 
-    date: string
+    date: string,
+    chatType?: 'group' | 'private'
   ): Promise<GeneratedReport> {
     console.log('🤖 AI服务开始生成日报');
     console.log('📊 输入参数:', { 
@@ -65,9 +74,19 @@ class AIService {
       const processedMessages = this.processMessages(messages);
       console.log('📝 消息处理完成，处理后数量:', processedMessages.length);
       
+      // 判断聊天类型 - 优先使用传入的chatType参数
+      let determinedChatType: 'group' | 'private';
+      if (chatType) {
+        determinedChatType = chatType;
+        console.log('🔍 使用传入的聊天类型:', determinedChatType);
+      } else {
+        determinedChatType = this.isPrivateChat(messages) ? 'private' : 'group';
+        console.log('🔍 自动判断聊天类型:', determinedChatType);
+      }
+      
       console.log('🔍 开始生成结构化日报...');
       // 生成结构化日报
-      const digest = await this.generateDigest(processedMessages, chatName, date);
+      const digest = await this.generateDigest(processedMessages, chatName, date, determinedChatType);
       console.log('🔍 结构化日报生成完成');
       
       console.log('📄 开始生成文本日报...');
@@ -194,7 +213,8 @@ class AIService {
   private async generateDigest(
     messages: any[], 
     chatName: string, 
-    date: string
+    date: string,
+    chatType: 'group' | 'private' = 'group'
   ): Promise<DailyDigest> {
     // 保留中文群聊名称
     const cleanChatName = String(chatName).replace(/[\u0000-\u001F\u007F-\u009F]/g, '').substring(0, 50);
@@ -221,9 +241,96 @@ class AIService {
     const userExamples = actualUsers.slice(0, 3).map(u => `"${u}"`).join(', ');
     const allUsers = actualUsers.map(u => `"${u}"`).join(', ');
     
-    const prompt = `分析微信群聊记录，生成简洁但信息丰富的JSON格式日报（适合一张图片展示）。
+    // 为个人聊天和群聊定制不同的prompt
+    const chatTypeText = chatType === 'private' ? '个人聊天' : '群聊';
+    const analysisTarget = chatType === 'private' ? 
+      `${chatTypeText}对象：${cleanChatName}` : 
+      `${chatTypeText}：${cleanChatName}`;
+    
+    const prompt = chatType === 'private' ? 
+      `分析微信个人聊天记录，生成简洁但信息丰富的JSON格式日报（适合一张图片展示）。
 
-群聊：${cleanChatName}
+${analysisTarget}
+日期：${date}
+参与用户：${actualUsers.join(', ')}
+
+聊天记录：
+${messagesText}
+
+返回以下JSON格式（针对个人聊天优化）：
+
+{
+  "topicHighlights": [
+    {
+      "title": "话题标题（简洁明了）",
+      "summary": "话题详细描述（80-120字，包含关键信息和背景）",
+      "participants": ["使用实际的用户名"],
+      "timeRange": "时间段",
+      "category": "工作/学习/生活/情感/决策/讨论/其他",
+      "significance": "高|中|低",
+      "keywordTags": ["关键词1", "关键词2"],
+      "sentimentTone": "positive|neutral|negative|mixed"
+    }
+  ],
+  "activityStats": {
+    "totalMessages": ${messages.length},
+    "activeUsers": ["必须使用实际用户名: ${allUsers}"],
+    "messageDistribution": {"morning": 0, "afternoon": 0, "evening": 0, "night": 0},
+    "averageMessageLength": 0,
+    "responseRate": 0.0,
+    "mediaStats": {
+      "imageCount": 0,
+      "linkCount": 0,
+      "documentCount": 0
+    }
+  },
+  "quotableMessages": [
+    {
+      "content": "精彩发言（有价值的个人表达）",
+      "author": "必须使用实际的发送者用户名",
+      "timestamp": "时间",
+      "messageType": "insight|humor|decision|question|solution|emotion",
+      "sentimentScore": 0.5
+    }
+  ],
+  "privateAnalysis": {
+    "relationshipTone": "friendly|professional|intimate|neutral",
+    "conversationPatterns": ["对话模式描述1", "对话模式描述2"],
+    "emotionalInsights": ["情感洞察1", "情感洞察2"],
+    "communicationStyle": "沟通风格描述"
+  },
+  "contentValue": {
+    "knowledgeSharing": [
+      {
+        "type": "经验分享|资源推荐|问题解决|学习交流",
+        "content": "分享内容摘要",
+        "author": "分享者",
+        "timestamp": "时间"
+      }
+    ],
+    "actionItems": [
+      {
+        "task": "待办事项描述",
+        "assignee": "负责人（如有）",
+        "context": "上下文"
+      }
+    ],
+    "decisionsMade": [
+      {
+        "decision": "决策内容",
+        "context": "决策背景",
+        "participants": ["参与决策的用户"],
+        "timestamp": "时间"
+      }
+    ]
+  },
+  "trendInsights": {
+    "comparedToPrevious": "与往常相比的变化描述"
+  }
+}` :
+      `分析微信群聊记录，生成简洁但信息丰富的JSON格式日报（适合一张图片展示）。
+
+${analysisTarget}
 日期：${date}
 参与用户：${actualUsers.join(', ')}
 
@@ -389,6 +496,7 @@ JSON格式严格要求：
         id: `digest-${date}`,
         chatGroupId: chatName,
         chatGroupName: chatName,
+        chatType,
         date,
         topicHighlights: result.topicHighlights || [],
         activityStats: {
@@ -397,7 +505,11 @@ JSON格式严格要求：
           peakTimeRange: this.calculatePeakTime(messages),
           messageDistribution: this.calculateTimeDistribution(messages)
         },
-        quotableMessages: result.quotableMessages || []
+        quotableMessages: result.quotableMessages || [],
+        // 为个人聊天添加特殊分析
+        ...(chatType === 'private' && result.privateAnalysis ? {
+          privateAnalysis: result.privateAnalysis
+        } : {})
       };
 
       return digest;
@@ -410,6 +522,7 @@ JSON格式严格要求：
         id: `digest-${date}`,
         chatGroupId: chatName,
         chatGroupName: chatName,
+        chatType,
         date,
         topicHighlights: [{
           title: '解析失败',

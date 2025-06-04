@@ -3,7 +3,9 @@ import {
   ChatlogChatroom, 
   ChatlogMessage, 
   ChatlogSession,
-  ChatlogConfig 
+  ChatlogConfig,
+  ChatlogPrivateChat,
+  ChatTarget
 } from '../../shared/types';
 
 class ChatlogService {
@@ -113,9 +115,88 @@ class ChatlogService {
     }
   }
 
-  // 获取联系人列表（暂不实现）
+  // 获取联系人列表
   async getContacts(): Promise<ChatlogContact[]> {
-    throw new Error('获取联系人列表功能暂未实现');
+    if (!this.isElectron()) {
+      throw new Error('此应用只能在Electron环境中运行');
+    }
+
+    try {
+      const result = await (window as any).electronAPI.chatlogGetContacts();
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    } catch (error: any) {
+      console.error('获取联系人列表失败:', error);
+      throw new Error(`获取联系人列表失败: ${error.message || '未知错误'}`);
+    }
+  }
+
+  // 获取所有聊天对象（群聊+个人聊天）
+  async getAllChatTargets(): Promise<ChatTarget[]> {
+    if (!this.isElectron()) {
+      throw new Error('此应用只能在Electron环境中运行');
+    }
+
+    try {
+      // 并行获取群聊和联系人
+      const [chatroomsResult, contactsResult] = await Promise.all([
+        this.getChatrooms(),
+        this.getContacts()
+      ]);
+
+      const targets: ChatTarget[] = [];
+
+      // 添加群聊
+      chatroomsResult.forEach(room => {
+        // 使用正确的字段名：nickName（注意大小写）
+        const displayName = room.nickName || room.nickname || room.remark || `群聊-${room.name.replace('@chatroom', '').slice(-6)}`;
+        
+        targets.push({
+          id: room.name,
+          name: displayName,
+          type: 'group',
+          rawData: room
+        });
+      });
+
+      // 添加个人聊天
+      contactsResult.forEach(contact => {
+        const privateChat: ChatlogPrivateChat = {
+          username: contact.username,
+          nickname: contact.nickname,
+          remark: contact.remark,
+          wxid: contact.wxid,
+          type: 'private'
+        };
+
+        // 使用正确的字段名：nickname（从API返回的数据中获取）
+        const displayName = contact.nickname || contact.remark || `联系人-${contact.username}`;
+
+        targets.push({
+          id: contact.username,
+          name: displayName,
+          type: 'private',
+          rawData: privateChat
+        });
+      });
+
+      // 按类型和名称排序
+      targets.sort((a, b) => {
+        // 先按类型排序：群聊在前，个人聊天在后
+        if (a.type !== b.type) {
+          return a.type === 'group' ? -1 : 1;
+        }
+        // 再按名称排序
+        return a.name.localeCompare(b.name, 'zh-CN');
+      });
+
+      return targets;
+    } catch (error: any) {
+      console.error('获取聊天对象列表失败:', error);
+      throw new Error(`获取聊天对象列表失败: ${error.message || '未知错误'}`);
+    }
   }
 
   // 获取会话列表（暂不实现）

@@ -17,6 +17,9 @@ export interface ChatlogContact {
   username: string;
   nickname: string;
   remark?: string;
+  type?: 'friend' | 'stranger' | 'blacklist';
+  avatar?: string;
+  wxid?: string;
 }
 
 export interface ChatlogChatroom {
@@ -26,6 +29,31 @@ export interface ChatlogChatroom {
   nickname: string;
   owner?: string;
   remark?: string;
+}
+
+// 新增：个人聊天类型
+export interface ChatlogPrivateChat {
+  username: string;
+  nickname: string;
+  remark?: string;
+  wxid?: string;
+  avatar?: string;
+  lastMessageTime?: number;
+  messageCount?: number;
+  isBlacklisted?: boolean;
+  type: 'private';
+}
+
+// 扩展的聊天对象类型，统一群聊和个人聊天
+export interface ChatTarget {
+  id: string;          // 用于API调用的标识符
+  name: string;        // 显示名称
+  type: 'group' | 'private';
+  avatar?: string;
+  lastMessageTime?: number;
+  messageCount?: number;
+  // 原始数据
+  rawData: ChatlogChatroom | ChatlogPrivateChat;
 }
 
 export interface ChatlogMessage {
@@ -128,10 +156,12 @@ export interface GroupHealth {
   recommendations: string[];
 }
 
+// 扩展日报类型以支持个人聊天
 export interface DailyDigest {
   id: string;
   chatGroupId: string;
   chatGroupName: string;
+  chatType: 'group' | 'private'; // 新增：聊天类型
   date: string;
   topicHighlights: TopicHighlight[];
   activityStats: ActivityStats;
@@ -139,6 +169,13 @@ export interface DailyDigest {
   memberContributions?: MemberContribution[];
   contentValue?: ContentValue;
   groupHealth?: GroupHealth;
+  // 个人聊天特有分析
+  privateAnalysis?: {
+    relationshipTone: 'friendly' | 'professional' | 'intimate' | 'neutral';
+    conversationPatterns: string[];
+    emotionalInsights: string[];
+    communicationStyle: string;
+  };
   trendInsights?: {
     comparedToPrevious: string;
     weeklyPattern?: string;
@@ -167,6 +204,7 @@ export interface ElectronAPI {
   chatlogConfigure: (baseUrl: string) => Promise<{ success: boolean; error?: string }>;
   chatlogCheckConnection: () => Promise<{ success: boolean; connected?: boolean; error?: string }>;
   chatlogGetChatrooms: () => Promise<{ success: boolean; data?: ChatlogChatroom[]; error?: string }>;
+  chatlogGetContacts: () => Promise<{ success: boolean; data?: ChatlogContact[]; error?: string }>; // 新增
   chatlogGetDailyMessages: (talker: string, date: string) => Promise<{ success: boolean; data?: ChatlogMessage[]; error?: string }>;
   
   // 应用信息

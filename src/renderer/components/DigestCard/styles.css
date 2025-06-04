@@ -416,6 +416,240 @@
   box-shadow: 0 4px 16px rgba(7, 193, 96, 0.4);
 }
 
+/* 私聊分析样式 */
+.private-analysis-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+/* 对话氛围圆环卡片 */
+.relationship-tone-card {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(123, 104, 238, 0.1) 0%, rgba(72, 61, 139, 0.1) 100%);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(123, 104, 238, 0.2);
+}
+
+.tone-circle-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.tone-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 3px solid;
+  animation: pulse 2s infinite;
+}
+
+.tone-circle.friendly {
+  border-color: #52c41a;
+  background: linear-gradient(135deg, rgba(82, 196, 26, 0.2) 0%, rgba(82, 196, 26, 0.1) 100%);
+}
+
+.tone-circle.professional {
+  border-color: #1890ff;
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.2) 0%, rgba(24, 144, 255, 0.1) 100%);
+}
+
+.tone-circle.intimate {
+  border-color: #eb2f96;
+  background: linear-gradient(135deg, rgba(235, 47, 150, 0.2) 0%, rgba(235, 47, 150, 0.1) 100%);
+}
+
+.tone-circle.neutral {
+  border-color: #8c8c8c;
+  background: linear-gradient(135deg, rgba(140, 140, 140, 0.2) 0%, rgba(140, 140, 140, 0.1) 100%);
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.tone-icon {
+  font-size: 32px;
+}
+
+.tone-label {
+  flex: 1;
+}
+
+.tone-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.tone-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* 沟通风格卡片 */
+.communication-style-card {
+  background: linear-gradient(135deg, rgba(255, 165, 0, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 165, 0, 0.2);
+}
+
+.style-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.style-icon {
+  font-size: 20px;
+}
+
+.style-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.style-content {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  padding: 8px 0;
+}
+
+/* 对话模式标签云 */
+.conversation-patterns-card {
+  background: linear-gradient(135deg, rgba(64, 169, 255, 0.1) 0%, rgba(100, 181, 246, 0.1) 100%);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(64, 169, 255, 0.2);
+}
+
+.patterns-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.patterns-icon {
+  font-size: 20px;
+}
+
+.patterns-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.patterns-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pattern-tag {
+  background: rgba(64, 169, 255, 0.2);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid rgba(64, 169, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.pattern-tag:hover {
+  background: rgba(64, 169, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* 情感洞察时间线 */
+.emotional-insights-card {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(135, 208, 104, 0.1) 0%, rgba(76, 175, 80, 0.1) 100%);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(135, 208, 104, 0.2);
+}
+
+.insights-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.insights-icon {
+  font-size: 20px;
+}
+
+.insights-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.insights-timeline {
+  position: relative;
+  padding-left: 20px;
+}
+
+.insights-timeline::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, rgba(135, 208, 104, 0.8), rgba(76, 175, 80, 0.4));
+}
+
+.insight-item {
+  position: relative;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.insight-item:last-child {
+  margin-bottom: 0;
+}
+
+.insight-dot {
+  position: absolute;
+  left: -16px;
+  top: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #87d068;
+  border: 2px solid rgba(135, 208, 104, 0.3);
+  box-shadow: 0 0 8px rgba(135, 208, 104, 0.6);
+}
+
+.insight-content {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid #87d068;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .digest-card {
@@ -496,6 +730,49 @@
   .value-item {
     padding: 10px;
     font-size: 13px;
+  }
+
+  /* 私聊分析响应式 */
+  .private-analysis-container {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .tone-circle-container {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .tone-circle {
+    width: 60px;
+    height: 60px;
+  }
+
+  .tone-icon {
+    font-size: 24px;
+  }
+
+  .tone-title {
+    font-size: 16px;
+  }
+
+  .tone-desc {
+    font-size: 13px;
+  }
+
+  .style-content,
+  .insight-content {
+    font-size: 13px;
+  }
+
+  .patterns-cloud {
+    justify-content: center;
+  }
+
+  .pattern-tag {
+    font-size: 11px;
+    padding: 4px 8px;
   }
 }
 

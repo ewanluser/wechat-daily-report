@@ -29,11 +29,12 @@ import { SettingsModal } from '../../components/Settings';
 import { DigestCard } from '../../components/DigestCard';
 import { ContactModal } from '../../components/ContactModal';
 import { LogViewer } from '../../components/LogViewer';
+import ChatSelector from '../../components/ChatSelector';
 import { chatlogService } from '../../services/chatlogService';
 import { aiService } from '../../services/aiService';
 import { configService } from '../../services/configService';
 import { logService } from '../../services/logService';
-import { ChatlogChatroom, DailyDigest, GeneratedReport } from '../../../shared/types';
+import { ChatlogChatroom, DailyDigest, GeneratedReport, ChatTarget } from '../../../shared/types';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -43,11 +44,12 @@ const DailyReport: React.FC = () => {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [contactVisible, setContactVisible] = useState(false);
   const [logViewerVisible, setLogViewerVisible] = useState(false);
-  const [chatrooms, setChatrooms] = useState<ChatlogChatroom[]>([]);
-  const [selectedChatroom, setSelectedChatroom] = useState<string>('');
+  const [chatSelectorVisible, setChatSelectorVisible] = useState(false);
+  const [chatTargets, setChatTargets] = useState<ChatTarget[]>([]);
+  const [selectedChatTarget, setSelectedChatTarget] = useState<ChatTarget | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
   const [loading, setLoading] = useState(false);
-  const [loadingChatrooms, setLoadingChatrooms] = useState(false);
+  const [loadingChatTargets, setLoadingChatTargets] = useState(false);
   const [generatedReport, setGeneratedReport] = useState<GeneratedReport | null>(null);
   const [isConfigured, setIsConfigured] = useState(false);
 
@@ -57,10 +59,10 @@ const DailyReport: React.FC = () => {
     checkConfiguration();
   }, []);
 
-  // 当配置状态改变时重新加载群聊列表
+  // 当配置状态改变时重新加载聊天对象列表
   useEffect(() => {
     if (isConfigured) {
-      loadChatrooms();
+      loadChatTargets();
     }
   }, [isConfigured]);
 
@@ -111,40 +113,40 @@ const DailyReport: React.FC = () => {
     }
   };
 
-  const loadChatrooms = async () => {
-    // 只有配置完成后才加载群聊列表
+  const loadChatTargets = async () => {
+    // 只有配置完成后才加载聊天对象列表
     if (!isConfigured) {
-      logService.info('配置未完成，跳过加载群聊列表', null, 'DailyReport');
+      logService.info('配置未完成，跳过加载聊天对象列表', null, 'DailyReport');
       return;
     }
 
-    setLoadingChatrooms(true);
-    logService.info('开始加载群聊列表', null, 'DailyReport');
+    setLoadingChatTargets(true);
+    logService.info('开始加载聊天对象列表', null, 'DailyReport');
     try {
-      const rooms = await chatlogService.getChatrooms();
-      setChatrooms(rooms);
-      logService.info(`成功加载群聊列表`, { count: rooms.length }, 'DailyReport');
+      const targets = await chatlogService.getAllChatTargets();
+      setChatTargets(targets);
+      logService.info(`成功加载聊天对象列表`, { count: targets.length }, 'DailyReport');
     } catch (error) {
-      logService.error('获取群聊列表失败', { error: error instanceof Error ? error.message : String(error) }, 'DailyReport');
-      message.error('获取群聊列表失败，请检查Chatlog服务是否正常运行');
-      setChatrooms([]);
+      logService.error('获取聊天对象列表失败', { error: error instanceof Error ? error.message : String(error) }, 'DailyReport');
+      message.error('获取聊天对象列表失败，请检查Chatlog服务是否正常运行');
+      setChatTargets([]);
     } finally {
-      setLoadingChatrooms(false);
+      setLoadingChatTargets(false);
     }
   };
 
   const handleGenerateReport = async () => {
     logService.info('🚀 点击生成日报按钮', null, 'DailyReport');
     logService.info('📊 当前状态', {
-      selectedChatroom,
+      selectedChatTarget: selectedChatTarget?.id,
       selectedDate,
       isConfigured,
-      chatroomsLength: chatrooms.length
+      chatTargetsLength: chatTargets.length
     }, 'DailyReport');
 
-    if (!selectedChatroom) {
-      logService.warn('❌ 未选择群聊', null, 'DailyReport');
-      message.warning('请选择要分析的群聊');
+    if (!selectedChatTarget) {
+      logService.warn('❌ 未选择聊天对象', null, 'DailyReport');
+      message.warning('请选择要分析的聊天对象');
       return;
     }
 
@@ -158,25 +160,25 @@ const DailyReport: React.FC = () => {
     logService.info('✅ 开始生成日报流程', null, 'DailyReport');
     setLoading(true);
     try {
-      logService.info('📥 开始获取聊天记录...', { selectedChatroom, selectedDate }, 'DailyReport');
+      logService.info('📥 开始获取聊天记录...', { selectedChatTarget: selectedChatTarget.id, selectedDate }, 'DailyReport');
       // 获取聊天记录
-      const messages = await chatlogService.getDailyMessages(selectedChatroom, selectedDate);
+      const messages = await chatlogService.getDailyMessages(selectedChatTarget.id, selectedDate);
       logService.info('📥 获取到聊天记录', { messageCount: messages.length }, 'DailyReport');
       
       if (messages.length === 0) {
-        logService.warn('❌ 该日期没有聊天记录', { selectedChatroom, selectedDate }, 'DailyReport');
+        logService.warn('❌ 该日期没有聊天记录', { selectedChatTarget: selectedChatTarget.id, selectedDate }, 'DailyReport');
         message.warning('该日期没有聊天记录');
         return;
       }
 
-      // 获取选中群聊的名称
-      const chatroom = chatrooms.find(room => room.name === selectedChatroom);
-      const chatName = chatroom?.nickname || chatroom?.nickName || selectedChatroom;
-      logService.info('🏷️ 群聊名称', { chatName }, 'DailyReport');
+      // 获取选中聊天对象的名称和类型
+      const chatName = selectedChatTarget.name;
+      const chatType = selectedChatTarget.type;
+      logService.info('🏷️ 聊天对象信息', { chatName, chatType }, 'DailyReport');
 
       logService.info('🤖 开始AI生成日报...', null, 'DailyReport');
       // 生成日报
-      const report = await aiService.generateReport(messages, chatName, selectedDate);
+      const report = await aiService.generateReport(messages, chatName, selectedDate, chatType);
       logService.info('✅ 日报生成成功', { reportGenerated: !!report }, 'DailyReport');
       setGeneratedReport(report);
       
@@ -196,10 +198,15 @@ const DailyReport: React.FC = () => {
     // 添加小延迟确保配置已保存
     setTimeout(async () => {
       await checkConfiguration();
-      // 重新加载群聊列表
-      loadChatrooms();
+      // 重新加载聊天对象列表
+      loadChatTargets();
       message.success('配置已更新');
     }, 200);
+  };
+
+  const handleChatTargetSelect = (target: ChatTarget) => {
+    setSelectedChatTarget(target);
+    logService.info('选择聊天对象', { id: target.id, name: target.name, type: target.type }, 'DailyReport');
   };
 
   return (
@@ -213,7 +220,7 @@ const DailyReport: React.FC = () => {
         padding: '0 24px'
       }}>
         <Title level={3} style={{ color: '#fff', margin: 0 }}>
-          微信群聊日报生成器
+          微信聊天日报生成器
         </Title>
         <Space>
           <Button 
@@ -265,39 +272,73 @@ const DailyReport: React.FC = () => {
               title={
                 <Space>
                   <TeamOutlined />
-                  <span>选择群聊</span>
+                  <span>选择聊天对象</span>
                 </Space>
               }
-              style={{ background: '#1F1A42', border: '1px solid rgba(255, 255, 255, 0.1)' }}
+              style={{ 
+                background: '#1F1A42', 
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                height: '180px'
+              }}
               headStyle={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: '#fff' }}
-              bodyStyle={{ background: '#1F1A42' }}
+              bodyStyle={{ 
+                background: '#1F1A42',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                height: '120px'
+              }}
             >
-              <Select
-                placeholder="请选择群聊"
-                value={selectedChatroom}
-                onChange={setSelectedChatroom}
-                style={{ width: '100%', marginBottom: '16px' }}
-                loading={loadingChatrooms}
-                notFoundContent={loadingChatrooms ? <Spin size="small" /> : '暂无群聊数据'}
-                showSearch
-                allowClear
-                filterOption={(input, option) => {
-                  if (!input) return true;
-                  const label = String(option?.label || option?.children || '');
-                  return label.toLowerCase().includes(input.toLowerCase());
-                }}
-                dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
-              >
-                {chatrooms.map(room => (
-                  <Option key={room.name} value={room.name}>
-                    {room.nickname || room.nickName || room.name}
-                  </Option>
-                ))}
-              </Select>
+              <div style={{ flex: 1 }}>
+                <Button
+                  size="large"
+                  style={{ 
+                    width: '100%', 
+                    textAlign: 'left',
+                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
+                    border: '1px solid rgba(139, 92, 246, 0.4)',
+                    borderRadius: '8px',
+                    height: '48px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    paddingLeft: '16px',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onClick={() => setChatSelectorVisible(true)}
+                  loading={loadingChatTargets}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(59, 130, 246, 0.3) 100%)';
+                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.6)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(139, 92, 246, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)';
+                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  {selectedChatTarget ? (
+                    <Space>
+                      <span style={{ color: selectedChatTarget.type === 'group' ? '#52c41a' : '#1890ff' }}>
+                        {selectedChatTarget.type === 'group' ? '🗣️' : '👤'}
+                      </span>
+                      {selectedChatTarget.name}
+                    </Space>
+                  ) : (
+                    '点击选择聊天对象...'
+                  )}
+                </Button>
+              </div>
               
               <Text type="secondary" style={{ fontSize: '12px' }}>
                 <MessageOutlined style={{ marginRight: '4px' }} />
-                共 {chatrooms.length} 个群聊可选
+                共 {chatTargets.filter(t => t.type === 'group').length} 个群聊，{chatTargets.filter(t => t.type === 'private').length} 个个人聊天
               </Text>
             </Card>
           </Col>
@@ -310,16 +351,28 @@ const DailyReport: React.FC = () => {
                   <span>选择日期</span>
                 </Space>
               }
-              style={{ background: '#1F1A42', border: '1px solid rgba(255, 255, 255, 0.1)' }}
+              style={{ 
+                background: '#1F1A42', 
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                height: '180px'
+              }}
               headStyle={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: '#fff' }}
-              bodyStyle={{ background: '#1F1A42' }}
+              bodyStyle={{ 
+                background: '#1F1A42',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                height: '120px'
+              }}
             >
-              <DatePicker
-                value={dayjs(selectedDate)}
-                onChange={(date) => setSelectedDate(date?.format('YYYY-MM-DD') || dayjs().format('YYYY-MM-DD'))}
-                style={{ width: '100%', marginBottom: '16px' }}
-                disabledDate={(current) => current && current > dayjs().endOf('day')}
-              />
+              <div style={{ flex: 1 }}>
+                <DatePicker
+                  value={dayjs(selectedDate)}
+                  onChange={(date) => setSelectedDate(date?.format('YYYY-MM-DD') || dayjs().format('YYYY-MM-DD'))}
+                  style={{ width: '100%' }}
+                  disabledDate={(current) => current && current > dayjs().endOf('day')}
+                />
+              </div>
               
               <Text type="secondary" style={{ fontSize: '12px' }}>
                 <CalendarOutlined style={{ marginRight: '4px' }} />
@@ -336,21 +389,33 @@ const DailyReport: React.FC = () => {
                   <span>生成日报</span>
                 </Space>
               }
-              style={{ background: '#1F1A42', border: '1px solid rgba(255, 255, 255, 0.1)' }}
+              style={{ 
+                background: '#1F1A42', 
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                height: '180px'
+              }}
               headStyle={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: '#fff' }}
-              bodyStyle={{ background: '#1F1A42' }}
+              bodyStyle={{ 
+                background: '#1F1A42',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                height: '120px'
+              }}
             >
-              <Button
-                type="primary"
-                size="large"
-                icon={<ThunderboltOutlined />}
-                onClick={handleGenerateReport}
-                loading={loading}
-                disabled={!selectedChatroom || !isConfigured}
-                style={{ width: '100%', marginBottom: '16px' }}
-              >
-                {loading ? '生成中...' : '生成日报'}
-              </Button>
+              <div style={{ flex: 1 }}>
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<ThunderboltOutlined />}
+                  onClick={handleGenerateReport}
+                  loading={loading}
+                  disabled={!selectedChatTarget || !isConfigured}
+                  style={{ width: '100%', height: '48px' }}
+                >
+                  {loading ? '生成中...' : '生成日报'}
+                </Button>
+              </div>
               
               <Text type="secondary" style={{ fontSize: '12px' }}>
                 <ApiOutlined style={{ marginRight: '4px' }} />
@@ -417,6 +482,16 @@ const DailyReport: React.FC = () => {
       <LogViewer
         visible={logViewerVisible}
         onClose={() => setLogViewerVisible(false)}
+      />
+
+      {/* 聊天对象选择器 */}
+      <ChatSelector
+        visible={chatSelectorVisible}
+        onClose={() => setChatSelectorVisible(false)}
+        onSelect={handleChatTargetSelect}
+        chatTargets={chatTargets}
+        loading={loadingChatTargets}
+        selectedId={selectedChatTarget?.id}
       />
     </Layout>
   );

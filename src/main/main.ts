@@ -40,14 +40,16 @@ function initializeChatlogApi(baseUrl: string) {
 // 创建主窗口
 function createMainWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1400,
+    height: 900,
+    minWidth: 1200,
+    minHeight: 800,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
     },
-    title: '微信群聊日报生成器',
+    title: '微信聊天日报生成器',
     show: false,
   });
 
@@ -179,14 +181,62 @@ ipcMain.handle('chatlog:getChatrooms', async () => {
       // 移除数量限制，显示所有群聊
       .map((room: any) => ({
         name: room.name,
-        nickName: room.nickName || room.remark || room.name,
+        nickName: room.nickName || room.remark || `群聊-${room.name.replace('@chatroom', '').slice(-6)}`,
         username: room.name,
-        nickname: room.nickName || room.remark || room.name
+        nickname: room.nickName || room.remark || `群聊-${room.name.replace('@chatroom', '').slice(-6)}`
       })) : [];
 
     console.log(`获取到 ${chatrooms.length} 个群聊`);
 
     return { success: true, data: chatrooms };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// 获取联系人列表
+ipcMain.handle('chatlog:getContacts', async () => {
+  if (!chatlogApi) {
+    return { success: false, error: 'Chatlog API not initialized' };
+  }
+
+  try {
+    const response = await chatlogApi.get('/api/v1/contact', {
+      params: { format: 'json' }
+    });
+
+    // Chatlog返回的是items数组或直接数组
+    const rawData = response.data.items || response.data || [];
+    const contacts = Array.isArray(rawData) ? rawData
+      .filter((contact: any) => {
+        // 过滤掉群聊和系统账号
+        if (!contact.userName) {
+          return false;
+        }
+        
+        // 排除没有昵称的联系人（可能是系统账号）
+        if (!contact.nickName) {
+          return false;
+        }
+        
+        // 只保留好友
+        if (contact.isFriend === false) {
+          return false;
+        }
+        
+        return true;
+      })
+      .map((contact: any) => ({
+        username: contact.userName,
+        nickname: contact.nickName || contact.remark || contact.alias || `联系人-${contact.userName}`,
+        remark: contact.remark,
+        wxid: contact.userName,
+        type: 'friend' as const
+      })) : [];
+
+    console.log(`获取到 ${contacts.length} 个联系人`);
+
+    return { success: true, data: contacts };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }
