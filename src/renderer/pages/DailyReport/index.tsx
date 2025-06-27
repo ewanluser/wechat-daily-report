@@ -30,6 +30,7 @@ import { DigestCard } from '../../components/DigestCard';
 import { ContactModal } from '../../components/ContactModal';
 import { LogViewer } from '../../components/LogViewer';
 import ChatSelector from '../../components/ChatSelector';
+import { FeishuExportModal } from '../../components/FeishuExport';
 import { chatlogService } from '../../services/chatlogService';
 import { aiService } from '../../services/aiService';
 import { configService } from '../../services/configService';
@@ -45,6 +46,7 @@ const DailyReport: React.FC = () => {
   const [contactVisible, setContactVisible] = useState(false);
   const [logViewerVisible, setLogViewerVisible] = useState(false);
   const [chatSelectorVisible, setChatSelectorVisible] = useState(false);
+  const [feishuExportVisible, setFeishuExportVisible] = useState(false);
   const [chatTargets, setChatTargets] = useState<ChatTarget[]>([]);
   const [selectedChatTarget, setSelectedChatTarget] = useState<ChatTarget | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
@@ -223,6 +225,14 @@ const DailyReport: React.FC = () => {
           微信聊天日报生成器
         </Title>
         <Space>
+          <Button 
+            type="text" 
+            icon={<TeamOutlined />} 
+            onClick={() => setFeishuExportVisible(true)}
+            style={{ color: '#fff' }}
+          >
+            飞书导出
+          </Button>
           <Button 
             type="text" 
             icon={<FileTextOutlined />} 
@@ -492,6 +502,16 @@ const DailyReport: React.FC = () => {
         chatTargets={chatTargets}
         loading={loadingChatTargets}
         selectedId={selectedChatTarget?.id}
+      />
+
+      {/* 飞书导出弹窗 */}
+      <FeishuExportModal
+        visible={feishuExportVisible}
+        onCancel={() => setFeishuExportVisible(false)}
+        onSuccess={(url) => {
+          message.success(`导出成功！表格地址：${url}`);
+          setFeishuExportVisible(false);
+        }}
       />
     </Layout>
   );

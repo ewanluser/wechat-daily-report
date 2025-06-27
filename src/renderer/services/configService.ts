@@ -1,4 +1,4 @@
-import { AIConfig, ChatlogConfig } from '../../shared/types';
+import { AIConfig, ChatlogConfig, FeishuConfig } from '../../shared/types';
 
 class ConfigService {
   private electronAPI: any;
@@ -26,6 +26,15 @@ class ConfigService {
 
   async loadChatlogConfig(): Promise<ChatlogConfig | null> {
     return await this.electronAPI.getStoreValue('chatlog-config');
+  }
+
+  // 飞书配置相关
+  async saveFeishuConfig(config: FeishuConfig): Promise<void> {
+    await this.electronAPI.setStoreValue('feishu-config', config);
+  }
+
+  async loadFeishuConfig(): Promise<FeishuConfig | null> {
+    return await this.electronAPI.getStoreValue('feishu-config');
   }
 
   // 通用配置方法
