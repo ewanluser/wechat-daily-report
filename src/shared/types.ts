@@ -93,6 +93,7 @@ export interface ChatlogMessage {
   talker: string;
   talkerName?: string;
   content: string;
+  contents?: any;
   timestamp?: number;
   time?: string;
   sender?: string;

@@ -303,17 +303,19 @@ class FeishuService {
       const requestRecords = batch.map(record => ({
         fields: {
           '消息内容': record.messageContent,
-          '时间': record.timestamp,
+          '时间': new Date(record.date).toLocaleTimeString(),
           '发送人': record.sender,
           ...(record.summary && { '消息摘要': record.summary }),
           '消息类型': record.messageType,
           '群名': record.chatName,
-          '日期': record.date,
+          '日期': new Date(record.timestamp).getTime(),
           '重要程度': record.importance,
           'AI分类': record.category,
           ...(record.keywords && { '关键词': record.keywords }),
         },
       }));
+
+      // console.log('requestRecords', requestRecords);
 
       try {
         const response = await fetch(
@@ -358,6 +360,7 @@ class FeishuService {
     if (!this.isConfigured()) {
       throw new Error('飞书服务未配置');
     }
+    // console.log('messages', messages);
 
     try {
       // 1. 创建多维表格
@@ -396,8 +399,23 @@ class FeishuService {
           }
         }
 
+        const getMessageContent = (message: ChatlogMessage) => {
+          if (message.content) {
+            return message.content;
+          }
+          if (message.contents) {
+            if (message.contents.md5) {
+              return '[图片]';
+            }
+            if (message.contents.title) {
+              return `[${message.contents.title}]${message.contents.url ? `(${message.contents.url})` : ''}`;
+            }
+          }
+          return '';
+        }
+
         const record: FeishuMessageRecord = {
-          messageContent: message.content || '',
+          messageContent: getMessageContent(message),
           timestamp: message.time || message.timestamp?.toString() || '',
           sender: message.senderName || message.sender || message.talker || 'Unknown',
           summary: aiAnalysis.summary,
@@ -409,7 +427,9 @@ class FeishuService {
           keywords: aiAnalysis.keywords,
         };
 
-        processedRecords.push(record);
+        if (!record.messageContent.includes('拍一拍')) {
+          processedRecords.push(record);
+        }
         
         // 每处理10条消息休息一下，避免API调用过于频繁
         if (enableAIClassification && (i + 1) % 10 === 0) {
