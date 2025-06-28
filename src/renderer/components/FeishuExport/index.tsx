@@ -348,9 +348,19 @@ export const FeishuExportModal: React.FC<FeishuExportModalProps> = ({
             placeholder="请选择要导出的聊天对象"
             loading={loadingChatTargets}
             showSearch
-            filterOption={(input, option) =>
-              String(option?.children || '').toLowerCase().includes(input.toLowerCase())
-            }
+            filterOption={(input, option) => {
+              const target = chatTargets.find(t => t.id === option?.value);
+              if (!target) return false;
+              
+              const searchText = input.toLowerCase();
+              const targetName = (target.name || '').toLowerCase();
+              const targetType = target.type === 'group' ? '群聊' : '私聊';
+              
+              return targetName.includes(searchText) || 
+                     targetType.includes(searchText) ||
+                     (target.id || '').toLowerCase().includes(searchText);
+            }}
+            optionFilterProp="children"
           >
             {chatTargets.map((target) => (
               <Option key={target.id} value={target.id}>
