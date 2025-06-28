@@ -44,7 +44,7 @@ interface FeishuExportModalProps {
 }
 
 interface ExportProgress {
-  stage: 'preparing' | 'fetching' | 'processing' | 'uploading' | 'completed' | 'error';
+  stage: 'preparing' | 'fetching' | 'processing' | 'uploading' | 'transferring' | 'completed' | 'error';
   progress: number;
   message: string;
   currentMessageIndex?: number;
@@ -164,18 +164,33 @@ export const FeishuExportModal: React.FC<FeishuExportModalProps> = ({
         totalMessages: allMessages.length,
       });
 
-             // 2. 导出到飞书
-       const result = await feishuService.exportChatMessages(
-         allMessages,
-         exportConfig.chatTarget.name || '未知聊天对象',
-         exportConfig.tableName || '聊天记录',
-         exportConfig.enableAIClassification
-       );
+      // 2. 导出到飞书
+      setExportProgress({
+        stage: 'uploading',
+        progress: 70,
+        message: '正在创建多维表格并上传数据...',
+      });
+
+      const result = await feishuService.exportChatMessages(
+        allMessages,
+        exportConfig.chatTarget.name || '未知聊天对象',
+        exportConfig.tableName || '聊天记录',
+        exportConfig.enableAIClassification
+      );
+
+      setExportProgress({
+        stage: 'transferring',
+        progress: 90,
+        message: '正在将多维表格转移给应用owner...',
+      });
+
+      // 给transferring阶段一点时间显示
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       setExportProgress({
         stage: 'completed',
         progress: 100,
-        message: '导出完成！',
+        message: '导出完成！已自动转移给应用owner',
         url: result.url,
       });
 
@@ -213,6 +228,7 @@ export const FeishuExportModal: React.FC<FeishuExportModalProps> = ({
     switch (exportProgress?.stage) {
       case 'error': return '#ff4d4f';
       case 'completed': return '#52c41a';
+      case 'transferring': return '#722ed1'; // 紫色表示转移阶段
       default: return '#1890ff';
     }
   };
@@ -382,6 +398,7 @@ export const FeishuExportModal: React.FC<FeishuExportModalProps> = ({
               <p>• 开启AI分析后，将对每条消息进行智能分类和重要性评估</p>
               <p>• 消息过长时会自动生成摘要</p>
               <p>• 导出的表格将在您的飞书空间中创建</p>
+              <p>• <strong>导出完成后，系统会自动将多维表格转移给应用owner，无需手动操作</strong></p>
               <p>• 导出时间取决于消息数量和是否开启AI分析</p>
             </div>
           }

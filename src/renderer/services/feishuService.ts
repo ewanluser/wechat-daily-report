@@ -31,6 +31,37 @@ interface FeishuTableResponse {
   };
 }
 
+// 添加新的接口定义
+interface FeishuAppInfoResponse {
+  code: number;
+  msg: string;
+  data?: {
+    app?: {
+      app_id: string;
+      app_name: string;
+      description: string;
+      avatar_url: string;
+      owner?: {
+        owner_id: string;
+      };
+      status: number;
+      scopes: string[];
+      back_home_url: string;
+      i18n_name: Record<string, string>;
+      i18n_description: Record<string, string>;
+      primary_language: string;
+      common_categories: string[];
+      app_scene_type: number;
+    };
+  };
+}
+
+interface FeishuTransferResponse {
+  code: number;
+  msg: string;
+  data?: any;
+}
+
 class FeishuService {
   private config: FeishuConfig | null = null;
   private accessToken: string | null = null;
@@ -99,6 +130,76 @@ class FeishuService {
     } catch (error) {
       console.error('飞书连接测试失败:', error);
       return false;
+    }
+  }
+
+  // 获取应用信息
+  async getAppInfo(): Promise<{ ownerId: string; appName: string }> {
+    const token = await this.getAccessToken();
+    
+    try {
+      const response = await fetch(`https://open.feishu.cn/open-apis/application/v6/applications/${this.config?.appId}?lang=zh_cn`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+      });
+
+      const data: FeishuAppInfoResponse = await response.json();
+      console.log('获取应用信息成功:', data);
+      
+      if (data.code !== 0) {
+        throw new Error(`获取应用信息失败: ${data.msg}`);
+      }
+
+      if (!data?.data?.app) {
+        throw new Error('获取应用信息响应格式错误');
+      }
+
+      const app = data.data.app;
+      const owner = app.owner;
+
+      if (!owner || !owner.owner_id) {
+        throw new Error('应用owner信息不完整');
+      }
+
+      return {
+        ownerId: owner.owner_id,
+        appName: app.app_name,
+      };
+    } catch (error) {
+      throw new Error(`获取应用信息失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    }
+  }
+
+  // 将多维表格转移给指定用户
+  async transferBitableToOwner(appToken: string, ownerId: string): Promise<void> {
+    const token = await this.getAccessToken();
+    
+    try {
+      const response = await fetch(`https://open.feishu.cn/open-apis/drive/v1/permissions/${appToken}/members/transfer_owner?type=bitable`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify({
+          member_type: 'openid',
+          member_id: ownerId,
+        }),
+      });
+
+      const data: FeishuTransferResponse = await response.json();
+      console.log('转移多维表格结果:', data);
+      
+      if (data.code !== 0) {
+        throw new Error(`转移多维表格失败: ${data.msg}`);
+      }
+
+      console.log('成功将多维表格转移给owner');
+    } catch (error) {
+      throw new Error(`转移多维表格失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   }
 
@@ -427,7 +528,7 @@ class FeishuService {
           keywords: aiAnalysis.keywords,
         };
 
-        if (!record.messageContent.includes('拍一拍')) {
+        if (!record.messageContent.includes('拍了拍')) {
           processedRecords.push(record);
         }
         
@@ -440,6 +541,20 @@ class FeishuService {
       // 4. 批量添加记录
       console.log('正在添加记录到表格...');
       await this.addRecordsToTable(appToken, tableId, processedRecords);
+
+      // 5. 自动获取应用信息并转移给owner
+      console.log('正在获取应用owner信息...');
+      try {
+        const appInfo = await this.getAppInfo();
+        console.log('应用owner信息:', appInfo);
+        
+        console.log('正在将多维表格转移给owner...');
+        await this.transferBitableToOwner(appToken, appInfo.ownerId);
+        console.log('成功将多维表格转移给owner:', appInfo.ownerId);
+      } catch (error) {
+        console.warn('转移多维表格给owner失败，但导出已完成:', error);
+        // 转移失败不影响导出结果，只记录警告
+      }
 
       const url = `https://feishu.cn/base/${appToken}`;
       
