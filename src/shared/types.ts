@@ -29,7 +29,7 @@ export interface FeishuMessageRecord {
   chatName: string;         // 群名/聊天对象
   date: string;             // 日期
   importance: 'high' | 'medium' | 'low';  // 重要程度
-  category: string;         // AI分类结果
+  // category: string;         // AI分类结果
   keywords?: string;        // 关键词标签
 }
 

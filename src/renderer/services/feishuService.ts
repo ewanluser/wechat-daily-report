@@ -252,7 +252,7 @@ class FeishuService {
         { field_name: '群名', type: 1 }, // 文本
         { field_name: '日期', type: 5 }, // 日期
         { field_name: '重要程度', type: 3 }, // 单选
-        { field_name: 'AI分类', type: 1 }, // 文本
+        // { field_name: '消息内容分类', type: 3 }, // 单选
         { field_name: '关键词', type: 1 }, // 文本
       ];
 
@@ -287,73 +287,116 @@ class FeishuService {
     }
   }
 
-  // 使用AI对消息进行智能分类和处理
+  // 批量使用AI对消息进行智能分类和处理
+  private async processBatchMessagesWithAI(messages: ChatlogMessage[]): Promise<Array<{
+    summary?: string;
+    // category: string;
+    importance: 'high' | 'medium' | 'low';
+    keywords?: string;
+    messageType: string;
+  }>> {
+    if (!aiService.isConfigured()) {
+      // 如果AI服务未配置，返回默认值数组
+      return messages.map(() => ({
+        // category: '普通消息',
+        importance: 'medium' as const,
+        messageType: '文本消息',
+      }));
+    }
+
+    try {
+      // 构造批量分析的prompt
+      const messagesText = messages.map((message, index) => {
+        const content = this.getMessageContent(message);
+        return `[消息${index + 1}] 发送人: ${message.senderName || message.sender || message.talker || 'Unknown'}\n内容: ${content}`;
+      }).join('\n\n');
+
+      const batchPrompt = `请分析以下${messages.length}条聊天消息，为每条消息返回JSON格式的分析结果。
+
+分析要求：
+1. 为每条消息生成摘要（如果内容超过50字）
+2. 评估重要程度（high/medium/low）
+3. 识别消息类型（如：问题咨询、信息分享、决策讨论、闲聊互动、通知公告等）
+4. 提取关键词（用逗号分隔，最多3个）
+
+请返回一个JSON数组，数组中每个元素对应一条消息的分析结果：
+[
+  {
+    "summary": "消息摘要（可选，仅当消息较长时）",
+    "importance": "重要程度（high/medium/low）",
+    "messageType": "消息类型",
+    "keywords": "关键词（用逗号分隔）"
+  }
+]
+
+需要分析的消息：
+${messagesText}`;
+
+      const analysisResult = await this.callAI(batchPrompt);
+      console.log('AI批量分析结果:', analysisResult);
+      
+      try {
+        const parsed = JSON.parse(analysisResult);
+        if (Array.isArray(parsed) && parsed.length === messages.length) {
+          return parsed.map(result => ({
+            summary: result.summary,
+            // category: result.category || '普通消息',
+            importance: result.importance || 'medium',
+            keywords: result.keywords,
+            messageType: result.messageType || '文本消息',
+          }));
+        } else {
+          console.warn('AI批量分析结果格式不正确，使用默认值');
+          return messages.map(() => ({
+            // category: '普通消息',
+            importance: 'medium' as const,
+            messageType: '文本消息',
+          }));
+        }
+      } catch (parseError) {
+        console.warn('AI批量分析结果解析失败，使用默认值:', parseError);
+        return messages.map(() => ({
+          // category: '普通消息',
+          importance: 'medium' as const,
+          messageType: '文本消息',
+        }));
+      }
+    } catch (error) {
+      console.warn('AI批量处理消息失败，使用默认值:', error);
+      return messages.map(() => ({
+        // category: '普通消息',
+        importance: 'medium' as const,
+        messageType: '文本消息',
+      }));
+    }
+  }
+
+  // 使用AI对消息进行智能分类和处理（保留原方法作为兼容）
   private async processMessageWithAI(message: ChatlogMessage): Promise<{
     summary?: string;
-    category: string;
+    // category: string;
     importance: 'high' | 'medium' | 'low';
     keywords?: string;
     messageType: string;
   }> {
-    if (!aiService.isConfigured()) {
-      // 如果AI服务未配置，返回默认值
-      return {
-        category: '普通消息',
-        importance: 'medium',
-        messageType: '文本消息',
-      };
+    const results = await this.processBatchMessagesWithAI([message]);
+    return results[0];
+  }
+
+  // 提取消息内容的辅助方法
+  private getMessageContent(message: ChatlogMessage): string {
+    if (message.content) {
+      return message.content;
     }
-
-    try {
-      const content = message.content || '';
-      
-      // 如果消息过长，生成摘要
-      let summary: string | undefined;
-      if (content.length > 100) {
-        const summaryPrompt = `请为以下消息生成简洁的摘要（不超过30字）：\n\n${content}`;
-        summary = await this.callAI(summaryPrompt);
+    if (message.contents) {
+      if (message.contents.md5) {
+        return '[图片]';
       }
-
-      // 消息分类和重要性判断
-      const analysisPrompt = `请分析以下消息，并返回JSON格式的结果：
-{
-  "category": "消息分类（如：工作讨论、技术分享、日常闲聊、重要通知等）",
-  "importance": "重要程度（high/medium/low）",
-  "messageType": "消息类型（如：问题咨询、信息分享、决策讨论、闲聊互动等）",
-  "keywords": "关键词（用逗号分隔，最多3个）"
-}
-
-消息内容：${content}`;
-
-      const analysisResult = await this.callAI(analysisPrompt);
-      console.log('AI分析结果:', analysisResult);
-      
-      try {
-        const parsed = JSON.parse(analysisResult);
-        return {
-          summary,
-          category: parsed.category || '普通消息',
-          importance: parsed.importance || 'medium',
-          keywords: parsed.keywords,
-          messageType: parsed.messageType || '文本消息',
-        };
-      } catch (parseError) {
-        console.warn('AI分析结果解析失败，使用默认值:', parseError);
-        return {
-          summary,
-          category: '普通消息',
-          importance: 'medium',
-          messageType: '文本消息',
-        };
+      if (message.contents.title) {
+        return `[${message.contents.title}]${message.contents.url ? `(${message.contents.url})` : ''}`;
       }
-    } catch (error) {
-      console.warn('AI处理消息失败，使用默认值:', error);
-      return {
-        category: '普通消息',
-        importance: 'medium',
-        messageType: '文本消息',
-      };
     }
+    return '';
   }
 
   // 调用AI服务
@@ -379,8 +422,8 @@ class FeishuService {
           model: config.model,
           messages: [{ role: 'user', content: prompt }],
           max_tokens: 100000,
-          temperature: 0.5,
-        }),
+          temperature: 0.1,
+        })
       }
     );
 
@@ -411,7 +454,7 @@ class FeishuService {
           '群名': record.chatName,
           '日期': new Date(record.timestamp).getTime(),
           '重要程度': record.importance,
-          'AI分类': record.category,
+          // '消息内容分类': record.category,
           ...(record.keywords && { '关键词': record.keywords }),
         },
       }));
@@ -456,7 +499,14 @@ class FeishuService {
     messages: ChatlogMessage[],
     chatName: string,
     tableName: string,
-    enableAIClassification = true
+    enableAIClassification = true,
+    onProgress?: (progress: { 
+      currentBatch: number; 
+      totalBatches: number; 
+      currentMessage: number; 
+      totalMessages: number; 
+      message: string; 
+    }) => void
   ): Promise<{ appToken: string; tableId: string; url: string }> {
     if (!this.isConfigured()) {
       throw new Error('飞书服务未配置');
@@ -475,68 +525,92 @@ class FeishuService {
       // 3. 处理消息数据
       console.log('正在处理消息数据...');
       const processedRecords: FeishuMessageRecord[] = [];
+      const batchSize = 100; // 每批处理100条消息
       
-      for (let i = 0; i < messages.length; i++) {
-        const message = messages[i];
-        console.log(`处理消息 ${i + 1}/${messages.length}`);
+      // 先过滤掉"拍了拍"消息
+      const validMessages = messages.filter(message => {
+        const content = this.getMessageContent(message);
+        return !content.includes('拍了拍');
+      });
+
+      const totalBatches = Math.ceil(validMessages.length / batchSize);
+      console.log(`有效消息数量: ${validMessages.length}，将分${totalBatches}批处理`);
+
+      for (let i = 0; i < validMessages.length; i += batchSize) {
+        const batch = validMessages.slice(i, i + batchSize);
+        const batchNumber = Math.floor(i / batchSize) + 1;
         
-        let aiAnalysis: {
-          category: string;
+        console.log(`正在处理第 ${batchNumber}/${totalBatches} 批消息 (${batch.length} 条)`);
+        
+        // 调用进度回调
+        if (onProgress) {
+          onProgress({
+            currentBatch: batchNumber,
+            totalBatches: totalBatches,
+            currentMessage: i + 1,
+            totalMessages: validMessages.length,
+            message: `正在处理第 ${batchNumber}/${totalBatches} 批消息 (${batch.length} 条)`
+          });
+        }
+
+        let batchAnalysis: Array<{
+          // category: string;
           importance: 'high' | 'medium' | 'low';
           messageType: string;
           keywords?: string;
           summary?: string;
-        } = {
-          category: '普通消息',
-          importance: 'medium',
-          messageType: '文本消息',
-        };
+        }>;
 
         if (enableAIClassification) {
           try {
-            aiAnalysis = await this.processMessageWithAI(message);
+            console.log(`开始AI分析第 ${batchNumber} 批消息...`);
+            batchAnalysis = await this.processBatchMessagesWithAI(batch);
+            console.log(`第 ${batchNumber} 批AI分析完成`);
           } catch (error) {
-            console.warn(`消息 ${i + 1} AI处理失败，使用默认值:`, error);
+            console.warn(`第 ${batchNumber} 批AI处理失败，使用默认值:`, error);
+            batchAnalysis = batch.map(() => ({
+              // category: '普通消息',
+              importance: 'medium' as const,
+              messageType: '文本消息',
+            }));
           }
+        } else {
+          batchAnalysis = batch.map(() => ({
+            // category: '普通消息',
+            importance: 'medium' as const,
+            messageType: '文本消息',
+          }));
         }
 
-        const getMessageContent = (message: ChatlogMessage) => {
-          if (message.content) {
-            return message.content;
-          }
-          if (message.contents) {
-            if (message.contents.md5) {
-              return '[图片]';
-            }
-            if (message.contents.title) {
-              return `[${message.contents.title}]${message.contents.url ? `(${message.contents.url})` : ''}`;
-            }
-          }
-          return '';
-        }
+        // 为当前批次的每条消息创建记录
+        for (let j = 0; j < batch.length; j++) {
+          const message = batch[j];
+          const aiAnalysis = batchAnalysis[j];
 
-        const record: FeishuMessageRecord = {
-          messageContent: getMessageContent(message),
-          timestamp: message.time || message.timestamp?.toString() || '',
-          sender: message.senderName || message.sender || message.talker || 'Unknown',
-          summary: aiAnalysis.summary,
-          messageType: aiAnalysis.messageType,
-          chatName: chatName,
-          date: message.time ? message.time.split(' ')[0] : '',
-          importance: aiAnalysis.importance,
-          category: aiAnalysis.category,
-          keywords: aiAnalysis.keywords,
-        };
+          const record: FeishuMessageRecord = {
+            messageContent: this.getMessageContent(message),
+            timestamp: message.time || message.timestamp?.toString() || '',
+            sender: message.senderName || message.sender || message.talker || 'Unknown',
+            summary: aiAnalysis.summary,
+            messageType: aiAnalysis.messageType,
+            chatName: chatName,
+            date: message.time ? message.time.split(' ')[0] : '',
+            importance: aiAnalysis.importance,
+            // category: aiAnalysis.category,
+            keywords: aiAnalysis.keywords,
+          };
 
-        if (!record.messageContent.includes('拍了拍')) {
           processedRecords.push(record);
         }
-        
-        // 每处理10条消息休息一下，避免API调用过于频繁
-        if (enableAIClassification && (i + 1) % 10 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // 批次间稍作休息，避免API调用过于频繁
+        if (enableAIClassification && i + batchSize < validMessages.length) {
+          console.log('等待3秒后处理下一批...');
+          await new Promise(resolve => setTimeout(resolve, 3000));
         }
       }
+
+      console.log(`消息处理完成，共处理 ${processedRecords.length} 条有效记录`);
 
       // 4. 批量添加记录
       console.log('正在添加记录到表格...');

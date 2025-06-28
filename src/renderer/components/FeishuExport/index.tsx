@@ -49,6 +49,8 @@ interface ExportProgress {
   message: string;
   currentMessageIndex?: number;
   totalMessages?: number;
+  currentBatch?: number;
+  totalBatches?: number;
   url?: string;
 }
 
@@ -175,7 +177,19 @@ export const FeishuExportModal: React.FC<FeishuExportModalProps> = ({
         allMessages,
         exportConfig.chatTarget.name || '未知聊天对象',
         exportConfig.tableName || '聊天记录',
-        exportConfig.enableAIClassification
+        exportConfig.enableAIClassification,
+        // 进度回调
+        (progress) => {
+          setExportProgress({
+            stage: 'processing',
+            progress: 30 + (progress.currentBatch / progress.totalBatches) * 40, // 30-70%进度
+            message: progress.message,
+            currentBatch: progress.currentBatch,
+            totalBatches: progress.totalBatches,
+            currentMessageIndex: progress.currentMessage,
+            totalMessages: progress.totalMessages,
+          });
+        }
       );
 
       setExportProgress({
@@ -290,9 +304,14 @@ export const FeishuExportModal: React.FC<FeishuExportModalProps> = ({
               strokeColor={getProgressColor()}
             />
             <Text>{exportProgress.message}</Text>
+            {exportProgress.currentBatch && exportProgress.totalBatches && (
+              <Text type="secondary">
+                批次进度: {exportProgress.currentBatch}/{exportProgress.totalBatches} 批
+              </Text>
+            )}
             {exportProgress.currentMessageIndex && exportProgress.totalMessages && (
               <Text type="secondary">
-                处理进度: {exportProgress.currentMessageIndex}/{exportProgress.totalMessages}
+                消息进度: {exportProgress.currentMessageIndex}/{exportProgress.totalMessages}
               </Text>
             )}
             {exportProgress.url && (
@@ -405,10 +424,11 @@ export const FeishuExportModal: React.FC<FeishuExportModalProps> = ({
           description={
             <div>
               <p>• 系统将为每条消息创建一行记录，包含消息内容、时间、发送人等信息</p>
-              <p>• 开启AI分析后，将对每条消息进行智能分类和重要性评估</p>
+              <p>• 开启AI分析后，将对消息进行批量智能分类和重要性评估（每100条消息一批）</p>
               <p>• 消息过长时会自动生成摘要</p>
               <p>• 导出的表格将在您的飞书空间中创建</p>
               <p>• <strong>导出完成后，系统会自动将多维表格转移给应用owner，无需手动操作</strong></p>
+              <p>• <strong>批量AI处理大大减少API调用次数，提高效率并节约成本</strong></p>
               <p>• 导出时间取决于消息数量和是否开启AI分析</p>
             </div>
           }
