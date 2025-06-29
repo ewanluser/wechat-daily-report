@@ -12,6 +12,36 @@ export interface ChatlogConfig {
   isConnected: boolean;
 }
 
+// 飞书配置类型
+export interface FeishuConfig {
+  appId: string;
+  appSecret: string;
+  isConnected: boolean;
+}
+
+// 飞书多维表格字段类型
+export interface FeishuMessageRecord {
+  messageContent: string;    // 消息内容
+  timestamp: string;         // 时间
+  sender: string;           // 发消息的人
+  summary?: string;         // 消息总结（如果消息过长）
+  messageType: string;      // 消息类型分类
+  chatName: string;         // 群名/聊天对象
+  date: string;             // 日期
+  importance: 'high' | 'medium' | 'low';  // 重要程度
+  // category: string;         // AI分类结果
+  keywords?: string;        // 关键词标签
+}
+
+// 飞书导出配置
+export interface FeishuExportConfig {
+  startDate: string;
+  endDate: string;
+  chatTarget: ChatTarget;
+  enableAIClassification: boolean;
+  tableName?: string;
+}
+
 // Chatlog API 相关类型
 export interface ChatlogContact {
   username: string;
@@ -63,6 +93,7 @@ export interface ChatlogMessage {
   talker: string;
   talkerName?: string;
   content: string;
+  contents?: any;
   timestamp?: number;
   time?: string;
   sender?: string;
