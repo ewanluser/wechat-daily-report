@@ -272,3 +272,46 @@ ipcMain.handle('chatlog:getDailyMessages', async (_, talker: string, date: strin
     return { success: false, error: (error as Error).message };
   }
 }); 
+
+ipcMain.handle('chatlog:getResource', async (_, url: string) => {
+  if (!chatlogApi) {
+    return { success: false, error: 'Chatlog API not initialized' };
+  }
+
+  try {
+    console.log('📡 主进程开始获取资源:', { url });
+    
+    // 处理URL格式
+    const resourcePath = url.startsWith('http') ? url : `/data/${url}`;
+    
+    // 使用responseType: 'arraybuffer' 获取二进制数据
+    const response = await chatlogApi.get(resourcePath, {
+      responseType: 'arraybuffer',
+      // 添加所需的头信息
+      headers: {
+        'Accept': '*/*'
+      }
+    });
+
+    console.log('📡 主进程API响应状态:', response.status);
+    console.log('📡 主进程API响应头信息:', response.headers);
+    console.log('📡 主进程API响应数据大小:', response.data ? response.data.length : 0, '字节');
+    
+    return { success: true, data: response.data, headers: response.headers };
+  } catch (error) {
+    console.error('📡 主进程API调用失败:', error);
+    
+    // 提供更详细的错误信息
+    let errorMessage = '未知错误';
+    if (error instanceof Error) {
+      errorMessage = `${error.name}: ${error.message}`;
+      console.error('错误详情:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    }
+    
+    return { success: false, error: errorMessage };
+  }
+}); 

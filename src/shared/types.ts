@@ -31,6 +31,7 @@ export interface FeishuMessageRecord {
   importance: 'high' | 'medium' | 'low';  // 重要程度
   // category: string;         // AI分类结果
   keywords?: string;        // 关键词标签
+  fileToken?: string;   // 飞书文件Token(file_token)，用于访问上传的图片、视频等
 }
 
 // 飞书导出配置
@@ -237,6 +238,7 @@ export interface ElectronAPI {
   chatlogGetChatrooms: () => Promise<{ success: boolean; data?: ChatlogChatroom[]; error?: string }>;
   chatlogGetContacts: () => Promise<{ success: boolean; data?: ChatlogContact[]; error?: string }>; // 新增
   chatlogGetDailyMessages: (talker: string, date: string) => Promise<{ success: boolean; data?: ChatlogMessage[]; error?: string }>;
+  chatlogGetResource: (url: string) => Promise<{ success: boolean; data?: any; error?: string }>;
   
   // 应用信息
   isElectron: boolean;
