@@ -301,10 +301,10 @@ class FeishuService {
         { field_name: '发送人', type: 1 }, // 文本
         { field_name: '消息摘要', type: 1 }, // 文本
         { field_name: '消息类型', type: 3 }, // 单选
+        { field_name: '消息分类', type: 3 }, // 单选
         { field_name: '群名', type: 1 }, // 文本
         { field_name: '日期', type: 5 }, // 日期
         { field_name: '重要程度', type: 3 }, // 单选
-        // { field_name: '消息内容分类', type: 3 }, // 单选
         { field_name: '关键词', type: 1 }, // 文本
         { field_name: '附件', type: 17 }, // 附件
       ];
@@ -358,7 +358,9 @@ class FeishuService {
       console.log('🔍 飞书服务 - 消息类型分布:', messageTypeStats);
     }
     
-    const filteredMessages = messages.filter(msg => isSupportedMessageType(msg.type));
+    const filteredMessages = messages
+      .filter(msg => isSupportedMessageType(msg.type))
+      .filter(msg => (msg.type !== WeChatMessageType.LINK) || msg.content || msg.contents);
     
     // 第一步：基本处理每条消息，不包括附件上传
     const processedMessages: Array<{
@@ -367,6 +369,7 @@ class FeishuService {
       content: string;
       timestamp: string;
       time: string;
+      messageType: string;
       originalSender: string | undefined;
       originalTalker: string;
       originalMessage: ChatlogMessage;
@@ -448,6 +451,7 @@ class FeishuService {
         content: cleanContent,
         timestamp,
         time: formattedTime,
+        messageType: getMessageTypeDescription(msg.type),
         originalSender: msg.sender, // 保留原始sender以备后用
         originalTalker: msg.talker, // 保留原始talker以备后用
         originalMessage: msg, // 保留原始消息对象
@@ -615,13 +619,13 @@ class FeishuService {
     summary?: string;
     importance: 'high' | 'medium' | 'low';
     keywords?: string;
-    messageType: string;
+    category: string;
   }>> {
     if (!aiService.isConfigured()) {
       console.log('🔍 飞书服务 - AI服务未配置，返回默认值');
       return messages.map(() => ({
         importance: 'medium' as const,
-        messageType: '文本消息',
+        category: '日常聊天',
       }));
     }
 
@@ -646,14 +650,13 @@ class FeishuService {
 2. 评估重要程度（high/medium/low）
 3. 识别消息类型（如：问题咨询、信息分享、决策讨论、闲聊互动、通知公告等）
 4. 提取关键词（用逗号分隔，最多3个）
-5. 对于包含图片或视频的消息，在分析中考虑这一点
 
 请返回一个JSON数组，数组中每个元素对应一条消息的分析结果：
 [
   {
     "summary": "消息摘要（可选，仅当消息较长时）",
     "importance": "重要程度（high/medium/low）",
-    "messageType": "消息类型",
+    "category": "消息类型",
     "keywords": "关键词（用逗号分隔）"
   }
 ]
@@ -673,27 +676,27 @@ ${messagesText}`;
             summary: result.summary,
             importance: result.importance || 'medium',
             keywords: result.keywords,
-            messageType: result.messageType || '文本消息',
+            category: result.category || '日常聊天',
           }));
         } else {
           console.warn('🔍 飞书服务 - AI批量分析结果格式不正确，使用默认值');
           return messages.map(() => ({
             importance: 'medium' as const,
-            messageType: '文本消息',
+            category: '日常聊天',
           }));
         }
       } catch (parseError) {
         console.warn('🔍 飞书服务 - AI批量分析结果解析失败，使用默认值:', parseError);
         return messages.map(() => ({
           importance: 'medium' as const,
-          messageType: '文本消息',
+          category: '日常聊天',
         }));
       }
     } catch (error) {
       console.warn('🔍 飞书服务 - AI批量处理消息失败，使用默认值:', error);
       return messages.map(() => ({
         importance: 'medium' as const,
-        messageType: '文本消息',
+        category: '日常聊天',
       }));
     }
   }
@@ -952,12 +955,13 @@ ${messagesText}`;
       const requestRecords = batch.map(record => ({
         fields: {
           '消息内容': record.messageContent,
-          '时间': new Date(record.date).toLocaleTimeString(),
+          '时间': record.timestamp,
           '发送人': record.sender,
           ...(record.summary && { '消息摘要': record.summary }),
           '消息类型': record.messageType,
+          '消息分类': record.category,
           '群名': record.chatName,
-          '日期': new Date(record.timestamp).getTime(),
+          '日期': new Date(record.date).getTime(),
           '重要程度': record.importance,
           ...(record.keywords && { '关键词': record.keywords }),
           ...(record.fileToken && { '附件': [{ file_token: record.fileToken }] }),
@@ -1016,7 +1020,7 @@ ${messagesText}`;
     if (!this.isConfigured()) {
       throw new Error('飞书服务未配置');
     }
-    // console.log('messages', messages);
+    // console.log('原始messages', messages);
 
     try {
       // 1. 创建多维表格
@@ -1059,7 +1063,7 @@ ${messagesText}`;
 
         let batchAnalysis: Array<{
           importance: 'high' | 'medium' | 'low';
-          messageType: string;
+          category: string;
           keywords?: string;
           summary?: string;
         }>;
@@ -1075,13 +1079,13 @@ ${messagesText}`;
             console.warn(`🔍 飞书服务 - 第 ${batchNumber} 批AI处理失败，使用默认值:`, error);
             batchAnalysis = batch.map(() => ({
               importance: 'medium' as const,
-              messageType: '文本消息',
+              category: '日常聊天',
             }));
           }
         } else {
           batchAnalysis = batch.map(() => ({
             importance: 'medium' as const,
-            messageType: '文本消息',
+            category: '日常聊天',
           }));
         }
 
@@ -1092,10 +1096,11 @@ ${messagesText}`;
 
           const record: FeishuMessageRecord = {
             messageContent: message.content,
-            timestamp: message.time || '',
+            timestamp: message.timestamp || '',
             sender: message.sender,
             summary: aiAnalysis.summary,
-            messageType: aiAnalysis.messageType,
+            messageType: message.messageType,
+            category: aiAnalysis.category,
             chatName: chatName,
             date: message.time ? dayjs(message.time).format('YYYY-MM-DD') : '',
             importance: aiAnalysis.importance,
