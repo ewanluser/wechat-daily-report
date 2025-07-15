@@ -19,6 +19,11 @@ const SUPPORTED_MESSAGE_TYPES = [
   WeChatMessageType.LINK,
 ];
 
+const BITABLE_TEMPLATE_ID = {
+  USE_AI: 'TZcFbR2ofaQHCtsFzT7cY9eznqS',
+  NO_AI: 'FQxybeTJVavu1csmVCDcb9IonMd',
+};
+
 // 检查消息类型是否被支持
 function isSupportedMessageType(messageType: number): boolean {
   return SUPPORTED_MESSAGE_TYPES.includes(messageType);
@@ -67,6 +72,21 @@ interface FeishuTableResponse {
   data?: {
     table_id: string;
     name: string;
+  };
+}
+
+interface FeishuDefaultTableResponse {
+  code: number;
+  msg: string;
+  data: {
+    has_more: boolean;
+    page_token: string;
+    total: number;
+    items: {
+      table_id: string;
+      revision: number;
+      name: string;
+    }[];
   };
 }
 
@@ -286,6 +306,70 @@ class FeishuService {
       return data.data.app.app_token;
     } catch (error) {
       throw new Error(`创建多维表格失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    }
+  }
+
+  // 复制多维表格
+  async copyBitable(name: string, enableAIClassification?: boolean): Promise<string> {
+    const token = await this.getAccessToken();
+    
+    try {
+      const response = await fetch(`https://open.feishu.cn/open-apis/bitable/v1/apps/${BITABLE_TEMPLATE_ID[enableAIClassification ? 'USE_AI' : 'NO_AI']}/copy`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify({
+          name,
+          without_content: true,
+        }),
+      });
+
+      const data: FeishuBitableResponse = await response.json();
+      console.log('多维表格副本创建成功:', data);
+      
+      if (data.code !== 0) {
+        throw new Error(`创建多维表格副本失败: ${data.msg}`);
+      }
+
+      if (!data?.data?.app?.app_token) {
+        throw new Error('创建多维表格副本响应格式错误');
+      }
+
+      return data.data.app.app_token;
+    } catch (error) {
+      throw new Error(`创建多维表格副本失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    }
+  }
+
+  // 查询默认数据表
+  async getDefaultTable(appToken: string): Promise<string> {
+    const token = await this.getAccessToken();
+    
+    try {
+      const response = await fetch(`https://open.feishu.cn/open-apis/bitable/v1/apps/${appToken}/tables`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+      });
+
+      const data: FeishuDefaultTableResponse = await response.json();
+      console.log('查询默认数据表成功:', data);
+      
+      if (data.code !== 0) {
+        throw new Error(`查询默认数据表失败: ${data.msg}`);
+      }
+
+      if (!data?.data?.items?.[0]?.table_id) {
+        throw new Error('查询默认数据表响应格式错误');
+      }
+
+      return data.data.items[0].table_id;
+    } catch (error) {
+      throw new Error(`查询默认数据表失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   }
 
@@ -957,13 +1041,13 @@ ${messagesText}`;
           '消息内容': record.messageContent,
           '时间': record.timestamp,
           '发送人': record.sender,
-          ...(record.summary && { '消息摘要': record.summary }),
+          // ...(record.summary && { '消息摘要': record.summary }),
           '消息类型': record.messageType,
-          '消息分类': record.category,
+          // '消息分类': record.category,
           '群名': record.chatName,
           '日期': new Date(record.date).getTime(),
-          '重要程度': record.importance,
-          ...(record.keywords && { '关键词': record.keywords }),
+          // '重要程度': record.importance,
+          // ...(record.keywords && { '关键词': record.keywords }),
           ...(record.fileToken && { '附件': [{ file_token: record.fileToken }] }),
         },
       }));
@@ -1023,13 +1107,21 @@ ${messagesText}`;
     // console.log('原始messages', messages);
 
     try {
-      // 1. 创建多维表格
-      console.log('正在创建多维表格...');
-      const appToken = await this.createBitable(tableName);
+      // // 1. 创建多维表格
+      // console.log('正在创建多维表格...');
+      // const appToken = await this.createBitable(tableName);
+
+      // // 2. 创建数据表
+      // console.log('正在创建数据表...');
+      // const tableId = await this.createTable(appToken, '聊天记录');
+
+      // 1. 创建多维表格副本
+      console.log('正在创建多维表格副本...');
+      const appToken = await this.copyBitable(tableName, enableAIClassification);
       
-      // 2. 创建数据表
-      console.log('正在创建数据表...');
-      const tableId = await this.createTable(appToken, '聊天记录');
+      // 2. 查询默认数据表
+      console.log('正在查询默认数据表...');
+      const tableId = await this.getDefaultTable(appToken);
       
       // 3. 处理消息数据
       console.log('🔍 飞书服务 - 正在处理消息数据...');
@@ -1068,43 +1160,43 @@ ${messagesText}`;
           summary?: string;
         }>;
 
-        if (enableAIClassification) {
-          try {
-            console.log(`🔍 飞书服务 - 开始AI分析第 ${batchNumber} 批消息...`);
-            // 使用原始消息进行AI分析，处理消息的过程中会自动上传附件
-            // const originalMessages = batch.map(msg => msg.originalMessage);
-            batchAnalysis = await this.processBatchMessagesWithAI(batch);
-            console.log(`🔍 飞书服务 - 第 ${batchNumber} 批AI分析完成`);
-          } catch (error) {
-            console.warn(`🔍 飞书服务 - 第 ${batchNumber} 批AI处理失败，使用默认值:`, error);
-            batchAnalysis = batch.map(() => ({
-              importance: 'medium' as const,
-              category: '日常聊天',
-            }));
-          }
-        } else {
-          batchAnalysis = batch.map(() => ({
-            importance: 'medium' as const,
-            category: '日常聊天',
-          }));
-        }
+        // if (enableAIClassification) {
+        //   try {
+        //     console.log(`🔍 飞书服务 - 开始AI分析第 ${batchNumber} 批消息...`);
+        //     // 使用原始消息进行AI分析，处理消息的过程中会自动上传附件
+        //     // const originalMessages = batch.map(msg => msg.originalMessage);
+        //     batchAnalysis = await this.processBatchMessagesWithAI(batch);
+        //     console.log(`🔍 飞书服务 - 第 ${batchNumber} 批AI分析完成`);
+        //   } catch (error) {
+        //     console.warn(`🔍 飞书服务 - 第 ${batchNumber} 批AI处理失败，使用默认值:`, error);
+        //     batchAnalysis = batch.map(() => ({
+        //       importance: 'medium' as const,
+        //       category: '日常聊天',
+        //     }));
+        //   }
+        // } else {
+        //   batchAnalysis = batch.map(() => ({
+        //     importance: 'medium' as const,
+        //     category: '日常聊天',
+        //   }));
+        // }
 
         // 为当前批次的每条消息创建记录
         for (let j = 0; j < batch.length; j++) {
           const message = batch[j];
-          const aiAnalysis = batchAnalysis[j];
+          // const aiAnalysis = batchAnalysis[j];
 
           const record: FeishuMessageRecord = {
             messageContent: message.content,
             timestamp: message.timestamp || '',
             sender: message.sender,
-            summary: aiAnalysis.summary,
+            // summary: aiAnalysis.summary,
             messageType: message.messageType,
-            category: aiAnalysis.category,
+            // category: aiAnalysis.category,
             chatName: chatName,
             date: message.time ? dayjs(message.time).format('YYYY-MM-DD') : '',
-            importance: aiAnalysis.importance,
-            keywords: aiAnalysis.keywords,
+            // importance: aiAnalysis.importance,
+            // keywords: aiAnalysis.keywords,
             fileToken: message.fileToken || undefined,
           };
 
@@ -1112,10 +1204,10 @@ ${messagesText}`;
         }
 
         // 批次间稍作休息，避免API调用过于频繁
-        if (enableAIClassification && i + batchSize < validMessages.length) {
-          console.log('🔍 飞书服务 - 等待3秒后处理下一批...');
-          await new Promise(resolve => setTimeout(resolve, 3000));
-        }
+        // if (enableAIClassification && i + batchSize < validMessages.length) {
+        //   console.log('🔍 飞书服务 - 等待3秒后处理下一批...');
+        //   await new Promise(resolve => setTimeout(resolve, 3000));
+        // }
       }
 
       console.log(`🔍 飞书服务 - 消息处理完成，共处理 ${processedRecords.length} 条有效记录`);
