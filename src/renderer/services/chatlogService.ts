@@ -133,6 +133,25 @@ class ChatlogService {
     }
   }
 
+  // 获取资源
+  async getResource(url: string): Promise<any> {
+    if (!this.isElectron()) {
+      throw new Error('此应用只能在Electron环境中运行');
+    }
+
+    try {
+      const result = await (window as any).electronAPI.chatlogGetResource(url);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result;
+    } catch (error: any) {
+      console.error('获取资源失败:', error);
+      throw new Error(`获取资源失败: ${error.message || '未知错误'}`);
+    }
+  }
+
   // 获取所有聊天对象（群聊+个人聊天）
   async getAllChatTargets(): Promise<ChatTarget[]> {
     if (!this.isElectron()) {

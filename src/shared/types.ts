@@ -25,12 +25,13 @@ export interface FeishuMessageRecord {
   timestamp: string;         // 时间
   sender: string;           // 发消息的人
   summary?: string;         // 消息总结（如果消息过长）
-  messageType: string;      // 消息类型分类
+  messageType: string;      // 消息类型
   chatName: string;         // 群名/聊天对象
   date: string;             // 日期
-  importance: 'high' | 'medium' | 'low';  // 重要程度
-  // category: string;         // AI分类结果
+  importance?: 'high' | 'medium' | 'low';  // 重要程度
+  category?: string;         // AI分类结果
   keywords?: string;        // 关键词标签
+  fileToken?: string;   // 飞书文件Token(file_token)，用于访问上传的图片、视频等
 }
 
 // 飞书导出配置
@@ -237,6 +238,7 @@ export interface ElectronAPI {
   chatlogGetChatrooms: () => Promise<{ success: boolean; data?: ChatlogChatroom[]; error?: string }>;
   chatlogGetContacts: () => Promise<{ success: boolean; data?: ChatlogContact[]; error?: string }>; // 新增
   chatlogGetDailyMessages: (talker: string, date: string) => Promise<{ success: boolean; data?: ChatlogMessage[]; error?: string }>;
+  chatlogGetResource: (url: string) => Promise<{ success: boolean; data?: any; error?: string }>;
   
   // 应用信息
   isElectron: boolean;
