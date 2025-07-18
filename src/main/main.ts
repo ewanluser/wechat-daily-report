@@ -254,7 +254,6 @@ ipcMain.handle('chatlog:getDailyMessages', async (_, talker: string, date: strin
       params: {
         talker,
         time: date, // 直接使用日期格式，如 2025-05-27
-        limit: 1000,
         format: 'json'
       }
     });
