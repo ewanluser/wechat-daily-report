@@ -48,14 +48,9 @@ export const LogViewer: React.FC<LogViewerProps> = ({ visible, onClose }) => {
 
   useEffect(() => {
     if (visible) {
+      // 只在modal打开时加载一次日志，不使用实时监听器
       loadLogs();
-      // 添加监听器实时更新日志
-      logService.addListener(handleLogsUpdate);
     }
-
-    return () => {
-      logService.removeListener(handleLogsUpdate);
-    };
   }, [visible]);
 
   useEffect(() => {
@@ -67,8 +62,9 @@ export const LogViewer: React.FC<LogViewerProps> = ({ visible, onClose }) => {
     setLogs(allLogs);
   };
 
-  const handleLogsUpdate = (updatedLogs: LogEntry[]) => {
-    setLogs(updatedLogs);
+  const refreshLogs = () => {
+    loadLogs();
+    message.success('日志已刷新');
   };
 
   const applyFilters = () => {
@@ -212,7 +208,20 @@ export const LogViewer: React.FC<LogViewerProps> = ({ visible, onClose }) => {
   return (
     <>
       <Modal
-        title="应用日志"
+        title={
+          <Space>
+            <span>应用日志</span>
+            <Tooltip title="刷新日志">
+              <Button
+                type="text"
+                icon={<ReloadOutlined />}
+                size="small"
+                onClick={refreshLogs}
+                style={{ color: '#1890ff' }}
+              />
+            </Tooltip>
+          </Space>
+        }
         open={visible}
         onCancel={onClose}
         width={1000}

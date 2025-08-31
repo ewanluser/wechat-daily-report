@@ -54,7 +54,7 @@ function createMainWindow(): void {
   });
 
   const url = isDevelopment
-    ? 'http://localhost:3000'
+    ? 'http://localhost:3001'
     : `file://${path.join(__dirname, '../renderer/index.html')}`;
 
   mainWindow.loadURL(url);

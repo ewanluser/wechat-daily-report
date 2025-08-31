@@ -649,6 +649,36 @@ ${messagesText}
     return distribution;
   }
 
+  // 生成自定义响应
+  async generateCustomResponse(prompt: string): Promise<string> {
+    if (!this.client || !this.config) {
+      throw new Error('AI service not configured');
+    }
+
+    console.log('🤖 开始生成自定义响应...');
+
+    try {
+      const response = await this.client.chat.completions.create({
+        model: this.config.model,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      });
+
+      const result = response.choices[0]?.message?.content || '生成响应失败';
+      console.log('✅ 自定义响应生成成功');
+      return result;
+    } catch (apiError) {
+      console.error('🤖 自定义响应AI API调用失败:', apiError);
+      throw new Error('生成响应失败，请检查API配置或网络连接');
+    }
+  }
+
   // 获取配置
   getConfig(): AIConfig | null {
     return this.config;

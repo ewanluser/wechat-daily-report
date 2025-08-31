@@ -48,6 +48,14 @@ const ChatSelector: React.FC<ChatSelectorProps> = ({
   const [favorites, setFavorites] = useState<string[]>([]);
   const [recentChats, setRecentChats] = useState<string[]>([]);
 
+  // Debug logging
+  console.log('🎭 ChatSelector render:', {
+    visible,
+    loading,
+    chatTargetsLength: chatTargets.length,
+    chatTargets: chatTargets.slice(0, 3) // Show first 3 for debugging
+  });
+
   // 从本地存储加载收藏和最近使用
   useEffect(() => {
     const savedFavorites = localStorage.getItem('chat-favorites');
